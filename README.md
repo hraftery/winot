@@ -62,8 +62,13 @@ And the winner?
 #### Avenues for consideration
 
 - Share your library of wines with house guests and let them pick a wine rather than bringing one you don't like!
+- Be more conscious with your wine appreciation by selecting wines rather than simply going through them top to bottom.
+- Mark your favourite wines at the moment of enjoyment, rather than trying to recall them when you're buying your next dozen.
+- We remember experiences better than names, so recall your favourite wines by reviewing your wine history instead of trying to remember what was on the label.
 - Never let a maturing wine go to waste! Reminders and stock tracking to ensure the good stuff gets drunk.
 - Team up with the Hone Liquid lads to put spectroscopy based analysis in the hands of the home connoisseur!
+- Plugins to services like [CellarTracker](https://www.cellartracker.com) to share experiences.
+- Spare barcodes for cleanskin bottles.
 
 #### Enabling technology
 
@@ -76,5 +81,32 @@ And the winner?
 #### Risks
 
 - Just how much information can be gleaned by the standard issue barcode? Is the database of identifiers available?
+	- Hmm, challenge: "There is no compulsory (or comprehensive) barcode database for alcohol products or any other retail product in Australia or worldwide." [Ref](https://barcodesaustralia.com/barcodes-for-wine/)
+	- [International Barcodes Database](https://barcodesdatabase.org) - searchable database. Turns out a small fraction of barcodes are in the database!
+	- [GS1](https://www.gs1au.org) - major barcode issuer in Australia.
+		- [Barcodes Australia](https://barcodesaustralia.com/barcodes-for-wine/) - a smaller issuer? Has a useful FAQ about barcodes on alcohol.
+		- [Hally Labels](https://www.hallylabels.com/labels-blog/wine-labelling-resources-you-need-to-know-the-complete-list/) - ditto
+	- [CellarTracker](https://support.cellartracker.com/article/10-about-upc-and-ean-barcodes) - an wine rating app that happens to have assembled "one of the largest wine databases" with 1.2 million barcodes, but warns that barcodes aren't a 100% reliable way of identifying a wine.
+		- Gets [lots of requests](https://www.cellartracker.com/forum/tm.asp?m=24391) to access that database via API and is working on it.
+	- [Vinloco](https://www.vinloco.com) - another wine rating app, so may have a database.
+	- [Naked Wines - Q&A on scanning barcodes](https://www.nakedwines.com/wall/single_view.htm?threadId=108341763&cid=UK) - 6 year old but very relevant discussion on apps that recognise wine barcodes.
+		- [Vivino](https://www.vivino.com/AU/en) - most popular suggestion.
+		- [Delectable](https://delectable.com) - next most popular.
+			- Label only, not barcode.
+	- [Corkz](https://apps.apple.com/app/apple-store/id294379127) - seems to add barcode scanning to CellarTracker and ViVino too.
 - Individual wine slot illumination might result in a rats nest of cabling.
 - Is there a strong enough use case for enabling fleet/multiple site management?
+
+
+### Inspiration
+
+- The [InvMan S-1](https://www.cluso.com.au/invman) from Cluso Vision Systems by our friends at CircuitWise.
+![InvMan S-1](documentation/media/InvMan.webp)
+- The [Pick To Light](https://www.monk-conveyors.com/pick-to-light/) system from Monk Conveyors
+![Pick To List - Pockets](documentation/media/pick_to_light-pockets.png)
+![Pick To List - Recessed Light](documentation/media/pick_to_light-recessed_light.png)
+- Turns out inventory solutions are sought after! And naturally, the Internet sees "apps" as the solution. Yep, another boring database to maintain by "entering all of your bottles into a large spreadsheet", or "organising you wine by producer, varietal or vintage". I'm falling asleep at the thought of it.
+	- [Found a wine management software yet](https://www.winecellarinnovations.com/blog/2010/10/06/found-a-wine-management-software-yet/)
+	- [How to take wine inventory](https://home.binwise.com/blog/how-to-take-wine-inventory)
+	- [How to Use a Wine Cellar Tracking App to Inventory and Barcode Your Wine Collection](https://blog.vinfolio.com/2017/06/28/use-wine-cellar-tracking-app-inventory-barcode-wine-collection/)
+- 
