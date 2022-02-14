@@ -82,6 +82,7 @@ And the winner?
 
 - Just how much information can be gleaned by the standard issue barcode? Is the database of identifiers available?
 	- Hmm, challenge: "There is no compulsory (or comprehensive) barcode database for alcohol products or any other retail product in Australia or worldwide." [Ref](https://barcodesaustralia.com/barcodes-for-wine/)
+		- **Current status**: the best databases are crowd-sourced. Data is spotty. Accessing it will require jumping some unclear API hurdles. **High risk.**
 	- [International Barcodes Database](https://barcodesdatabase.org) - searchable database. Turns out a small fraction of barcodes are in the database!
 	- [GS1](https://www.gs1au.org) - major barcode issuer in Australia.
 		- [Barcodes Australia](https://barcodesaustralia.com/barcodes-for-wine/) - a smaller issuer? Has a useful FAQ about barcodes on alcohol.
@@ -94,6 +95,8 @@ And the winner?
 		- [Delectable](https://delectable.com) - next most popular.
 			- Label only, not barcode.
 	- [Corkz](https://apps.apple.com/app/apple-store/id294379127) - seems to add barcode scanning to CellarTracker and ViVino too.
+	- [Untappd](https://untappd.com)
+		- Same story, but beer: "created its own barcode database based on brewers submission and/or crowdsourced from users. It seems to work really well in my experience, but did require years of growth".
 - Individual wine slot illumination might result in a rats nest of cabling.
 - Is there a strong enough use case for enabling fleet/multiple site management?
 
