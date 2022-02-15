@@ -83,18 +83,22 @@ And the winner?
 - Just how much information can be gleaned by the standard issue barcode? Is the database of identifiers available?
 	- Hmm, challenge: "There is no compulsory (or comprehensive) barcode database for alcohol products or any other retail product in Australia or worldwide." [Ref](https://barcodesaustralia.com/barcodes-for-wine/)
 		- **Current status**: the best databases are crowd-sourced. Data is spotty. Accessing it will require jumping some unclear API hurdles. **High risk.**
+		- **Update**: after research comes experimentation - results are that CellarTracker can be successfully searched by UPC (for free). Vivino can't. So CellarTracker is only option. [Alas](https://www.cellartracker.com/forum/fb.asp?m=339810):
+			- "I have had a few API consumers who have tried to use the API as a backdoor to try and steal large swathes of my wine database (no user data) or generally create inadvertent denial of service issues. They have ruined the party for everyone else. So I am not interested in providing any further access to my API except in the context of a much larger business discussion. I have a few such partners (e.g. Cor.kz, CellarVU, WineGlass), but generally those are very time consuming relationships to setup. So while I am open to receiving email about potential partnerships, at this point I am (a) not interested in having coffee or conference calls with everyone who is interested (about 10 such approaches per week), (b) not interested in opening up a general purpose API, (c) and not interested in selling or licensing my database."
 	- [International Barcodes Database](https://barcodesdatabase.org) - searchable database. Turns out a small fraction of barcodes are in the database!
 	- [GS1](https://www.gs1au.org) - major barcode issuer in Australia.
 		- [Barcodes Australia](https://barcodesaustralia.com/barcodes-for-wine/) - a smaller issuer? Has a useful FAQ about barcodes on alcohol.
 		- [Hally Labels](https://www.hallylabels.com/labels-blog/wine-labelling-resources-you-need-to-know-the-complete-list/) - ditto
 	- [CellarTracker](https://support.cellartracker.com/article/10-about-upc-and-ean-barcodes) - an wine rating app that happens to have assembled "one of the largest wine databases" with 1.2 million barcodes, but warns that barcodes aren't a 100% reliable way of identifying a wine.
 		- Gets [lots of requests](https://www.cellartracker.com/forum/tm.asp?m=24391) to access that database via API and is working on it.
+		- These days recommends and heavily supports printing your own barcodes that are specifically linked to entries in the CT database. How redundant that is is not clear.
 	- [Vinloco](https://www.vinloco.com) - another wine rating app, so may have a database.
 	- [Naked Wines - Q&A on scanning barcodes](https://www.nakedwines.com/wall/single_view.htm?threadId=108341763&cid=UK) - 6 year old but very relevant discussion on apps that recognise wine barcodes.
 		- [Vivino](https://www.vivino.com/AU/en) - most popular suggestion.
 		- [Delectable](https://delectable.com) - next most popular.
 			- Label only, not barcode.
 	- [Corkz](https://apps.apple.com/app/apple-store/id294379127) - seems to add barcode scanning to CellarTracker and ViVino too.
+		- Ah okay, relationship seems to be: CT and Vivino have separate databases, but CT uses Vivino to provide *label* (image) identification. CT has its own barcode identification and mobile app functionality, so doesn't need Corkz any more. But Corkz can still be used to provide mobile access to your CT account.
 	- [Untappd](https://untappd.com)
 		- Same story, but beer: "created its own barcode database based on brewers submission and/or crowdsourced from users. It seems to work really well in my experience, but did require years of growth".
 - Individual wine slot illumination might result in a rats nest of cabling.
