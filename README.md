@@ -86,59 +86,57 @@ And the winner?
 	- Oh yeah, and for better or worse, COVID-19 taught everyone what a QR code is.
 
 
-## Risks
+## Major Risks
 
-- Just how much information can be gleaned by the standard issue barcode? Is the database of identifiers available?
-	- Hmm, challenge: "There is no compulsory (or comprehensive) barcode database for alcohol products or any other retail product in Australia or worldwide." [Ref](https://barcodesaustralia.com/barcodes-for-wine/)
-		- **Current status**: the best databases are crowd-sourced. Data is spotty. Accessing it will require jumping some unclear API hurdles. **High risk.**
-		- **Update**: after research comes experimentation - results are that CellarTracker can be successfully searched by UPC (for free). Vivino can't. So CellarTracker is only option. [Alas](https://www.cellartracker.com/forum/fb.asp?m=339810):
-			- "I have had a few API consumers who have tried to use the API as a backdoor to try and steal large swathes of my wine database (no user data) or generally create inadvertent denial of service issues. They have ruined the party for everyone else. So I am not interested in providing any further access to my API except in the context of a much larger business discussion. I have a few such partners (e.g. Cor.kz, CellarVU, WineGlass), but generally those are very time consuming relationships to setup. So while I am open to receiving email about potential partnerships, at this point I am (a) not interested in having coffee or conference calls with everyone who is interested (about 10 such approaches per week), (b) not interested in opening up a general purpose API, (c) and not interested in selling or licensing my database."
-		- I think I see a profitable way forward. If can't beat them, join them. See [CellarTracker Interaction](CellarTracker Interaction).
-			- **Residual Risks**
-				- User session management. Cookies? Authentication?
-				- Discoverability, stability and utility of undocumentated URL scheme.
-	- [International Barcodes Database](https://barcodesdatabase.org) - searchable database. Turns out a small fraction of barcodes are in the database!
-	- [GS1](https://www.gs1au.org) - major barcode issuer in Australia.
-		- [Barcodes Australia](https://barcodesaustralia.com/barcodes-for-wine/) - a smaller issuer? Has a useful FAQ about barcodes on alcohol.
-		- [Hally Labels](https://www.hallylabels.com/labels-blog/wine-labelling-resources-you-need-to-know-the-complete-list/) - ditto
-	- [CellarTracker](https://support.cellartracker.com/article/10-about-upc-and-ean-barcodes) - an wine rating app that happens to have assembled "one of the largest wine databases" with 1.2 million barcodes, but warns that barcodes aren't a 100% reliable way of identifying a wine.
-		- Gets [lots of requests](https://www.cellartracker.com/forum/tm.asp?m=24391) to access that database via API and is working on it.
-		- These days recommends and heavily supports printing your own barcodes that are specifically linked to entries in the CT database. How redundant that is is not clear.
-	- [Vinloco](https://www.vinloco.com) - another wine rating app, so may have a database.
-	- [Naked Wines - Q&A on scanning barcodes](https://www.nakedwines.com/wall/single_view.htm?threadId=108341763&cid=UK) - 6 year old but very relevant discussion on apps that recognise wine barcodes.
-		- [Vivino](https://www.vivino.com/AU/en) - most popular suggestion.
-		- [Delectable](https://delectable.com) - next most popular.
-			- Label only, not barcode.
-	- [Corkz](https://apps.apple.com/app/apple-store/id294379127) - seems to add barcode scanning to CellarTracker and ViVino too.
-		- Ah okay, relationship seems to be: CT and Vivino have separate databases, but CT uses Vivino to provide *label* (image) identification. CT has its own barcode identification and mobile app functionality, so doesn't need Corkz any more. But Corkz can still be used to provide mobile access to your CT account.
-	- [Untappd](https://untappd.com)
-		- Same story, but beer: "created its own barcode database based on brewers submission and/or crowdsourced from users. It seems to work really well in my experience, but did require years of growth".
-- Individual wine slot illumination might result in a rats nest of cabling.
-	- Explored in [Pocket Illumination](pocket-illumination).
-- Is there a strong enough use case for enabling fleet/multiple site management?
+1. Just how much information can be gleaned by the standard issue barcode? Is the database of identifiers available?
+	- See [Dataset Availability](risk-1-dataset-availability).
+1. Individual wine slot illumination might result in a rats nest of cabling.
+	- See [Pocket Illumination](risk-2-pocket-illumination).
+1. Is there a strong enough use case for enabling fleet/multiple site management?
 
+### Risk 1: Dataset Availability
 
-## CellarTracker Interaction
+Hmm, we have a [problem](https://barcodesaustralia.com/barcodes-for-wine/):
 
-Risk reduction activities revealed that the biggest risk was in fact, a big hairy potential showstopper. The project premise assumes there's some publicly accessible dataset of barcode to wine relationships. Because surely every retailer doesn't create their own in private, right? Turns out there's [nothing even close](risks), and even if there was, it wouldn't always uniquely identify wines. I guess that's why they called it a Universal Product Code and not a Globally Unique Identifier...
+> "There is no compulsory (or comprehensive) barcode database for alcohol products or any other retail product in Australia or worldwide." 
 
-It turns out the world's best database for wine identification is a proprietary, largely crowd-sourced, for-profit effort that drives a website called CellarTracker. And the owner [got burnt](https://www.cellartracker.com/forum/fb.asp?m=339810) trying to provide a public API and has closed the door.
+Turns out the best databases are crowd-sourced. Data is spotty. Accessing it will require jumping some unclear API hurdles.
 
-A Raspberry Pi based web browser that allows the user to use CellarTracker hardly sounds like a ground-breaking IoT project, so Winot is looking shakey. I'm allergic to "there's an app for that" reductionism and always think physicality first, so just another web app would be a failure in my eyes. Except...
+**Assessment: high risk.**
 
-- A proprietary, crowd-sourced dataset is a healthy indicator of a vibrant community of users who see value in that data. 
-- The data is high quality, continually checked and updated, with metadata like reviews and prices.
-- CellarTracker already does the finicky and non-novel account/inventory management stuff.
-- And, if I take as a design constraint that the wine database is proprietary, all I *really* need to do the headline Winot features of:
-	- local control of pocket lights, and
-	- semi-automated entry of wine data;
-- is a read and submission entry point to the user's cellar data respectively. [Ooops](https://www.cellartracker.com/forum/printable.asp?m=443838), looks like we can fumble our way there. Experimentation results are favourable - might have to do some non-ideal things like polling and hand-off to the website, but with a bit of UX grease, these constraints can become nearly invisible. The key is to swim with CellarTracker, not perpendicular to it, and do better together.
+Research was illuminating but not conclusive. On to experimentation. Results are that CellarTracker can be successfully searched by UPC (for free). Vivino can't. So CellarTracker is only option. [Alas](https://www.cellartracker.com/forum/fb.asp?m=339810):
 
-It would look a little something like this:
+> I have had a few API consumers who have tried to use the API as a backdoor to try and steal large swathes of my wine database (no user data) or generally create inadvertent denial of service issues. They have ruined the party for everyone else. So I am not interested in providing any further access to my API except in the context of a much larger business discussion. I have a few such partners (e.g. Cor.kz, CellarVU, WineGlass), but generally those are very time consuming relationships to setup. So while I am open to receiving email about potential partnerships, at this point I am (a) not interested in having coffee or conference calls with everyone who is interested (about 10 such approaches per week), (b) not interested in opening up a general purpose API, (c) and not interested in selling or licensing my database.
 
-![CellarTracker Interaction](documentation/media/Winot_CellarTracker-Interaction.png)
+#### Outcome
 
-## Pocket Illumination
+I think I see a profitable way forward. If can't beat them, join them. See [CellarTracker Interaction](CellarTracker Interaction).
+
+#### Residual Risks
+
+- User session management. Cookies? Authentication?
+- Discoverability, stability and utility of undocumentated URL scheme.
+
+#### References
+
+- [International Barcodes Database](https://barcodesdatabase.org) - searchable database. Turns out a small fraction of barcodes are in the database!
+- [GS1](https://www.gs1au.org) - GS1 is the umbrella standard for UPC/EAN/etc. GS1 Australia is a major barcode issuer in Australia.
+	- [Barcodes Australia](https://barcodesaustralia.com/barcodes-for-wine/) - a smaller issuer? Has a useful FAQ about barcodes on alcohol.
+	- [Hally Labels](https://www.hallylabels.com/labels-blog/wine-labelling-resources-you-need-to-know-the-complete-list/) - ditto
+- [CellarTracker](https://support.cellartracker.com/article/10-about-upc-and-ean-barcodes) - an wine rating app that happens to have assembled "one of the largest wine databases" with 1.2 million barcodes, but warns that barcodes aren't a 100% reliable way of identifying a wine.
+	- Gets [lots of requests](https://www.cellartracker.com/forum/tm.asp?m=24391) to access that database via API and is working on it.
+	- These days recommends and heavily supports printing your own barcodes that are specifically linked to entries in the CT database. How redundant that is is not clear.
+- [Vinloco](https://www.vinloco.com) - another wine rating app, so may have a database.
+- [Naked Wines - Q&A on scanning barcodes](https://www.nakedwines.com/wall/single_view.htm?threadId=108341763&cid=UK) - 6 year old but very relevant discussion on apps that recognise wine barcodes.
+	- [Vivino](https://www.vivino.com/AU/en) - most popular suggestion.
+	- [Delectable](https://delectable.com) - next most popular.
+		- Label only, not barcode.
+- [Corkz](https://apps.apple.com/app/apple-store/id294379127) - seems to add barcode scanning to CellarTracker and ViVino too.
+	- Ah okay, relationship seems to be: CT and Vivino have separate databases, but CT uses Vivino to provide *label* (image) identification. CT has its own barcode identification and mobile app functionality, so doesn't need Corkz any more. But Corkz can still be used to provide mobile access to your CT account.
+- [Untappd](https://untappd.com)
+	- Same story, but beer: "created its own barcode database based on brewers submission and/or crowdsourced from users. It seems to work really well in my experience, but did require years of growth".
+
+### Risk 2: Pocket Illumination
 
 How to install and drive individual, coloured illumination of wine rack pockets?
 
@@ -146,13 +144,7 @@ How to install and drive individual, coloured illumination of wine rack pockets?
 - Wireless has serious challenges. Need uniquely addressable and non-line-of-sight, so IR is out. Market is swamped with IR, but nothing suitable with RF. Is it even feasible to leave a battery powered light on in RF receive mode? Lighting duty is very low, but useful figure for 433MHz receive mode is 4mA continuous. That's 250 hours for a 1000mAh AA battery. That's 10 days. With polling could get 10x easily. 100x (listen for 5ms every 500ms) is possible.
 	- This sounds like a project in itself. Perhaps a worthwhile one. Maybe phase 2, and make do with cables and hand-waving for now?
 
-This is the sort of thing that is widely [available](https://www.jhmarket.com.au/leastyle-battery-operated-led-under-counter-lights-in-black-pack-of-6.html?gclid=Cj0KCQiAmKiQBhClARIsAKtSj-m5L7Szz0UcwTkiGnD8J5Tqh03MxcRDMQeKKnfYdnlQTA6yK28qMEcaAsgMEALw_wcB) and cheap. But is IR, so a deadend. And it's a bit bulky.
-
-![LEASTYLE Under Counter Lights](documentation/media/cs-lse-tl008-rgb-aaa-bl-6p-2.jpeg)
-
-[This](https://www.ebay.com.au/itm/261835853404) is 433MHz and getting close but requires 12V power.
-
-### Conclusion
+#### Outcome
 
 After some experimentation, I have decided:
 
@@ -165,7 +157,7 @@ After some experimentation, I have decided:
 	- comes with suitable adhesive mounting method;
 	- can be cut and re-connected for passing through holes and around corners
 
-### Key Design Parameters
+#### Calculations
 
 My wine rack provides a useful set of design parameters.
 
@@ -186,6 +178,33 @@ My wine rack provides a useful set of design parameters.
 	- A Pi3 + 7" touchscreen will be 750mA continuous.
 	- So we could possibly run a 30LEDs/m strip flat out, or a 60LEDs/m if only half the LEDs are on at once.
 
+#### References
+
+This is the sort of thing that is widely [available](https://www.jhmarket.com.au/leastyle-battery-operated-led-under-counter-lights-in-black-pack-of-6.html?gclid=Cj0KCQiAmKiQBhClARIsAKtSj-m5L7Szz0UcwTkiGnD8J5Tqh03MxcRDMQeKKnfYdnlQTA6yK28qMEcaAsgMEALw_wcB) and cheap. But is IR, so a deadend. And it's a bit bulky.
+
+![LEASTYLE Under Counter Lights](documentation/media/cs-lse-tl008-rgb-aaa-bl-6p-2.jpeg)
+
+[This](https://www.ebay.com.au/itm/261835853404) is 433MHz and getting close but requires 12V power.
+
+## CellarTracker Interaction
+
+Risk reduction activities revealed that the biggest risk was in fact, a big hairy potential showstopper. The project premise assumes there's some publicly accessible dataset of barcode to wine relationships. Because surely every retailer doesn't create their own in private, right? Turns out there's [nothing even close](risks), and even if there was, it wouldn't always uniquely identify wines. I guess that's why they called it a Universal Product Code and not a Globally Unique Identifier...
+
+It turns out the world's best database for wine identification is a proprietary, largely crowd-sourced, for-profit effort that drives a website called CellarTracker. And the owner [got burnt](https://www.cellartracker.com/forum/fb.asp?m=339810) trying to provide a public API and has closed the door.
+
+A Raspberry Pi based web browser that allows the user to use CellarTracker hardly sounds like a ground-breaking IoT project, so Winot is looking shakey. I'm allergic to "there's an app for that" reductionism and always think physicality first, so just another web app would be a failure in my eyes. Except...
+
+- A proprietary, crowd-sourced dataset is a healthy indicator of a vibrant community of users who see value in that data. 
+- The data is high quality, continually checked and updated, with metadata like reviews and prices.
+- CellarTracker already does the finicky and non-novel account/inventory management stuff.
+- And, if I take as a design constraint that the wine database is proprietary, all I *really* need to do the headline Winot features of:
+	- local control of pocket lights, and
+	- semi-automated entry of wine data;
+- is a read and submission entry point to the user's cellar data respectively. [Ooops](https://www.cellartracker.com/forum/printable.asp?m=443838), looks like we can fumble our way there. Experimentation results are favourable - might have to do some non-ideal things like polling and hand-off to the website, but with a bit of UX grease, these constraints can become nearly invisible. The key is to swim with CellarTracker, not perpendicular to it, and do better together.
+
+It would look a little something like this:
+
+![CellarTracker Interaction](documentation/media/Winot_CellarTracker-Interaction.png)
 
 
 ## Inspiration
