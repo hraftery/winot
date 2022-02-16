@@ -8,12 +8,12 @@ Here's to the discovery process.
 ![cheers](documentation/media/cheers.jpg)
 
 
-### Project Attributes
+# Project Attributes
 
-Four weeks to commit to a project of one's own choosing - a dream come true for a insatiably curious engineer! But how to pin down just one project? These were the attributes that guided me:
+Four weeks to commit to a project of one's own choosing - a dream come true for a insatiably curious engineer! But how to pin down just one project? These were the self-imposed attributes that guided me:
 
 1. Don't solve anything important.
-	- The residency program is first and foremost a learning exercise. Any resulting utility is a bonus. I've learnt many times that when putting together short projects, the best learning comes from questions, not answers. Projects that set out to solve a problem in the world inevitably find that few interesting problems are skin-deep, and it becomes very hard to divorce the value of the project from its ultimate efficacy. Impactful problem solving requires a deep understanding of the problem and who it affects, and relatively little about the technology and tools that go into it.
+	- The residency program is a learning exercise. Any resulting utility is a bonus. I've learnt many times that when putting together short projects, the best learning comes from questions, not answers. Projects that set out to solve a problem in the world inevitably find that few interesting problems are skin-deep, and it becomes very hard to divorce the value of the project from its ultimate efficacy. Impactful problem solving requires a deep understanding of the problem and who it affects, and relatively little about the technology and tools that go into it.
 	- On the other hand, putting delight first tends to invite divergent thinking, stimulating wonder, play and conversation, all of which are brilliant building blocks for learning.
 	- In the ideation phase I often say we should avoid the temptation to jump to solutions, lest we stifle good ideas that need some time. Removing the pressure to solve something is a handy trick to ensure ideas have the opportunity to arise and percolate. And so, the first attribute of this project is remember that although Panadol fixes things, wine gets more people talking.
 1. Be tangible.
@@ -27,7 +27,7 @@ Four weeks to commit to a project of one's own choosing - a dream come true for 
 	- Naturally I have no shortage of half-baked projects waiting for a new lease on life. But they all carry context that will require some adaptation. The result is a project that awkwardly governed by competing pressures.
 	- Instead, maximise the value of the project by starting fresh, favouring without conflict the purposes of the profect.
 
-### Project Candidates
+# Project Candidates
 
 - IoT button for family chores. Eg. tap when done to unlock the TV or iPad.
 	- Love anything related to family stress-relief or time-saving. And IoT buttons capture for me the magic of the tangible - a supremely simple device, but powerful habit forming results.
@@ -46,7 +46,7 @@ Four weeks to commit to a project of one's own choosing - a dream come true for 
 - Smart farm kit for schools.
 	- Fails #3 and #4.
 
-### The Leading Candidate
+# The Leading Candidate
 
 And the winner?
 
@@ -59,7 +59,7 @@ And the winner?
 
 ---
 
-#### Avenues for consideration
+## Avenues for consideration
 
 - Share your library of wines with house guests and let them pick a wine rather than bringing one you don't like!
 - Be more conscious with your wine appreciation by selecting wines rather than simply going through them top to bottom.
@@ -70,7 +70,15 @@ And the winner?
 - Plugins to services like [CellarTracker](https://www.cellartracker.com) to share experiences.
 - Spare barcodes for cleanskin bottles.
 
-#### Enabling technology
+## Benefits
+
+- Drink more consciously by selecting wines rather than working through them sequentially.
+- Develop tastes and preferences by closing the loop on the drinking experience with tasting notes.
+- Track your drinking habits to make more informed choices.
+- Build a collection with purpose - a wine for every occassion.
+- Delight friends and spark conversations at dinner parties.
+
+## Enabling technology
 
 - Barcodes (1D, 2D and RFID) are an underappreciated technology. Classic example of boring, old and unnecessarily pigeon-holed. Potential to get it out of the supermarkets and into the hands of innovators.
 	- Eg 1: we had 500 people over the course of a week control enormous colourful tree lights using origami flowers that had RFID tags inside them. Magical action at a distance. https://www.instagram.com/p/B5JKPK9Aufn/
@@ -78,7 +86,7 @@ And the winner?
 	- Oh yeah, and for better or worse, COVID-19 taught everyone what a QR code is.
 
 
-#### Risks
+## Risks
 
 - Just how much information can be gleaned by the standard issue barcode? Is the database of identifiers available?
 	- Hmm, challenge: "There is no compulsory (or comprehensive) barcode database for alcohol products or any other retail product in Australia or worldwide." [Ref](https://barcodesaustralia.com/barcodes-for-wine/)
@@ -106,8 +114,7 @@ And the winner?
 	- [Untappd](https://untappd.com)
 		- Same story, but beer: "created its own barcode database based on brewers submission and/or crowdsourced from users. It seems to work really well in my experience, but did require years of growth".
 - Individual wine slot illumination might result in a rats nest of cabling.
-	- **Update**: Cabling is looking dead in the water - would either be tremendously unsightly or require drilling into walls. Either option manageable for permanent installs, but not MVP.
-	- Wireless has serious challenges. Need uniquely addressable and non-line-of-sight, so IR is out. Market is swamped with IR, but nothing suitable with RF. Is it even feasible to leave a battery powered light on in RF receive mode? Useful figure is 4mA continuous for 433MHz receive mode. That's 250 hours for a 1000mAh AA battery. That's 10 days. Even with polling that's a no go.
+	- Explored in [Pocket Illumination](pocket-illumination).
 - Is there a strong enough use case for enabling fleet/multiple site management?
 
 
@@ -131,8 +138,57 @@ It would look a little something like this:
 
 ![CellarTracker Interaction](documentation/media/Winot_CellarTracker-Interaction.png)
 
+## Pocket Illumination
 
-### Inspiration
+How to install and drive individual, coloured illumination of wine rack pockets?
+
+- Cabling is looking dead in the water - would either be tremendously unsightly or require drilling into walls. Either option manageable for permanent installs, but scores poorly on the WAF for a MVP.
+- Wireless has serious challenges. Need uniquely addressable and non-line-of-sight, so IR is out. Market is swamped with IR, but nothing suitable with RF. Is it even feasible to leave a battery powered light on in RF receive mode? Lighting duty is very low, but useful figure for 433MHz receive mode is 4mA continuous. That's 250 hours for a 1000mAh AA battery. That's 10 days. With polling could get 10x easily. 100x (listen for 5ms every 500ms) is possible.
+	- This sounds like a project in itself. Perhaps a worthwhile one. Maybe phase 2, and make do with cables and hand-waving for now?
+
+This is the sort of thing that is widely [available](https://www.jhmarket.com.au/leastyle-battery-operated-led-under-counter-lights-in-black-pack-of-6.html?gclid=Cj0KCQiAmKiQBhClARIsAKtSj-m5L7Szz0UcwTkiGnD8J5Tqh03MxcRDMQeKKnfYdnlQTA6yK28qMEcaAsgMEALw_wcB) and cheap. But is IR, so a deadend. And it's a bit bulky.
+
+![LEASTYLE Under Counter Lights](documentation/media/cs-lse-tl008-rgb-aaa-bl-6p-2.jpeg)
+
+[This](https://www.ebay.com.au/itm/261835853404) is 433MHz and getting close but requires 12V power.
+
+### Conclusion
+
+After some experimentation, I have decided:
+
+- standalone lights are a really interesting path to pursue, with potential of its own. But for now, running down dozens of batteries and debugging wireless gremlins is too much scope to deal with.
+- wired lights, with some very discreet holes in the wall, eliminates too many unknowns to pass up for version 1.
+- addressable LED strip is:
+	- widely available;
+	- reduces cabling to 3 wires in total;
+	- has predictable and pleasing aesthetics;
+	- comes with suitable adhesive mounting method;
+	- can be cut and re-connected for passing through holes and around corners
+
+### Key Design Parameters
+
+My wine rack provides a useful set of design parameters.
+
+- 16 pockets
+- Each pocket measures 118x112x295 (WxHxD) internal.
+- WS2815 is 12V, WS2812B is 5V.
+	- 5V will require power injection every 3-5m.
+	- WS2815 has 4 fourth wire for failed LED backup.
+	- WS2811 is also 12V, but LEDs are controlled in groups of 3, not individually... which might be all we want.
+- Strips are typically 30, 60, 100 or 144LEDs/m, which is 3, 6, 10 or 14 RGB LEDs per 100mm.
+	- 60LEDs/m strips have 17mm cuttable sections (102mm for 6).
+- LEDs are 60mA max (20mA each for R, G and B).
+	- So for 16 pockets with 100mm of LEDs, works out to be 1A max for each LED in a pocket. So for 3 LED pocket, 3A. For 10 LED pockets, 10A.
+		- For one pocket at a time operation: 120mA, 240mA, 600mA, 840mA.
+- 5V WS2812B strips are far easier to source, and we only have about 1.6m of actual LEDs, so maybe 12V not important. Will all the cutting and wiring affect that?
+	- But still, hard to supply max current.
+	- Relatively easy to source a 5V, 4A wall wart. Beyond 4A it'd be a separate supply.
+	- A Pi3 + 7" touchscreen will be 750mA continuous.
+	- So we could possibly run a 30LEDs/m strip flat out, or a 60LEDs/m if only half the LEDs are on at once.
+
+
+
+## Inspiration
 
 - The [InvMan S-1](https://www.cluso.com.au/invman) from Cluso Vision Systems by our friends at CircuitWise.
 ![InvMan S-1](documentation/media/InvMan.webp)
