@@ -7,8 +7,32 @@ Here's to the discovery process.
 
 ![cheers](documentation/media/cheers.jpg)
 
+## Table of Contents
+-   [Project Selection](#project-selection)
+    -   [Project Attributes](#project-attributes)
+    -   [Project Candidates](#project-candidates)
+    -   [The Leading Candidate](#the-leading-candidate)
+-   [Project Exploration](#project-exploration)
+    -   [Avenues for consideration](#avenues-for-consideration)
+    -   [Benefits](#benefits)
+    -   [Enabling technology](#enabling-technology)
+    -   [Major Risks](#major-risks)
+        -   [Risk 1: Dataset Availability](#risk-1-dataset-availability)
+            -   [Outcome](#outcome)
+            -   [Residual Risks](#residual-risks)
+            -   [References](#references)
+        -   [Risk 2: Pocket Illumination](#risk-2-pocket-illumination)
+            -   [Outcome](#outcome-1)
+            -   [Calculations](#calculations)
+            -   [References](#references-1)
+    -   [CellarTracker Interaction](#cellartracker-interaction)
+    -   [Inspiration](#inspiration)
 
-# Project Attributes
+---
+
+# Project Selection
+
+## Project Attributes
 
 Four weeks to commit to a project of one's own choosing - a dream come true for a insatiably curious engineer! But how to pin down just one project? These were the self-imposed attributes that guided me:
 
@@ -27,7 +51,7 @@ Four weeks to commit to a project of one's own choosing - a dream come true for 
 	- Naturally I have no shortage of half-baked projects waiting for a new lease on life. But they all carry context that will require some adaptation. The result is a project that awkwardly governed by competing pressures.
 	- Instead, maximise the value of the project by starting fresh, favouring without conflict the purposes of the profect.
 
-# Project Candidates
+## Project Candidates
 
 - IoT button for family chores. Eg. tap when done to unlock the TV or iPad.
 	- Love anything related to family stress-relief or time-saving. And IoT buttons capture for me the magic of the tangible - a supremely simple device, but powerful habit forming results.
@@ -46,7 +70,7 @@ Four weeks to commit to a project of one's own choosing - a dream come true for 
 - Smart farm kit for schools.
 	- Fails #3 and #4.
 
-# The Leading Candidate
+## The Leading Candidate
 
 And the winner?
 
@@ -59,6 +83,7 @@ And the winner?
 
 ---
 
+# Project Exploration
 ## Avenues for consideration
 
 - Share your library of wines with house guests and let them pick a wine rather than bringing one you don't like!
