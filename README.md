@@ -24,6 +24,7 @@ Here's to the discovery process.
         -   [Risk 2: Pocket Illumination](#risk-2-pocket-illumination)
             -   [Outcome](#outcome-1)
             -   [Calculations](#calculations)
+            -   [Form Factor](#form-factor)
             -   [References](#references-1)
     -   [CellarTracker Interaction](#cellartracker-interaction)
     -   [Inspiration](#inspiration)
@@ -114,9 +115,9 @@ And the winner?
 ## Major Risks
 
 1. Just how much information can be gleaned by the standard issue barcode? Is the database of identifiers available?
-	- See [Dataset Availability](risk-1-dataset-availability).
+	- See [Dataset Availability](#risk-1-dataset-availability).
 1. Individual wine slot illumination might result in a rats nest of cabling.
-	- See [Pocket Illumination](risk-2-pocket-illumination).
+	- See [Pocket Illumination](#risk-2-pocket-illumination).
 1. Is there a strong enough use case for enabling fleet/multiple site management?
 
 ### Risk 1: Dataset Availability
@@ -135,7 +136,7 @@ Research was illuminating but not conclusive. On to experimentation. Results are
 
 #### Outcome
 
-I think I see a profitable way forward. If can't beat them, join them. See [CellarTracker Interaction](CellarTracker Interaction).
+I think I see a profitable way forward. If can't beat them, join them. See [CellarTracker Interaction](#cellartracker-interaction).
 
 #### Residual Risks
 
@@ -163,7 +164,7 @@ I think I see a profitable way forward. If can't beat them, join them. See [Cell
 
 ### Risk 2: Pocket Illumination
 
-How to install and drive individual, coloured illumination of wine rack pockets?
+How to install and drive individual, coloured, low-UV (to avoid spoiling) illumination of wine rack pockets?
 
 - Cabling is looking dead in the water - would either be tremendously unsightly or require drilling into walls. Either option manageable for permanent installs, but scores poorly on the WAF for a MVP.
 - Wireless has serious challenges. Need uniquely addressable and non-line-of-sight, so IR is out. Market is swamped with IR, but nothing suitable with RF. Is it even feasible to leave a battery powered light on in RF receive mode? Lighting duty is very low, but useful figure for 433MHz receive mode is 4mA continuous. That's 250 hours for a 1000mAh AA battery. That's 10 days. With polling could get 10x easily. 100x (listen for 5ms every 500ms) is possible.
@@ -173,7 +174,7 @@ How to install and drive individual, coloured illumination of wine rack pockets?
 
 After some experimentation, I have decided:
 
-- standalone lights are a really interesting path to pursue, with potential of its own. But for now, running down dozens of batteries and debugging wireless gremlins is too much scope to deal with.
+- standalone lights are a really interesting path to pursue, with potential of its own. But for now, running down dozens of batteries and debugging wireless gremlins is too much scope to deal with. I cannot find a way to justify the cost, maintenance and installation requirements of batteries in the order of 3 AAA's per pocket.
 - wired lights, with some very discreet holes in the wall, eliminates too many unknowns to pass up for version 1.
 - addressable LED strip is:
 	- widely available;
@@ -202,6 +203,46 @@ My wine rack provides a useful set of design parameters.
 	- Relatively easy to source a 5V, 4A wall wart. Beyond 4A it'd be a separate supply.
 	- A Pi3 + 7" touchscreen will be 750mA continuous.
 	- So we could possibly run a 30LEDs/m strip flat out, or a 60LEDs/m if only half the LEDs are on at once.
+
+#### Form Factor
+
+Essential criteria are:
+
+- subtle impact on rack aesthetics
+- great lighting effect - this is the money shot opportunity
+- don't interfere with rack function
+
+Desirable criteria are:
+
+- leave no trace when removed
+- inexpensive, since this is the part that needs to scale
+- can be adapted to other wine rack styles
+
+The rack pockets are deep and nearly square. The bottles are round and are typically a tad longer than but not as wide as the pockets. Occassionally though, bottles do come close to filling the pocket height.
+
+Options:
+
+1. Dome light in ceiling of pocket.
+	- Standalone lights are often this form factor, and is a common way to light trophies or other recessed displays.
+	- But in our case the "trophy" is laid flat, plus we don't have much room to spare here and it will likely get bumped or obscured.
+1. Something on the back wall - in a corner or along an edge.
+	- Difficult to avoid shining in to user's eyes from some angle.
+1. LED strip across ceiling of pocket, part way down.
+	- Allows "in" wiring and "out" wiring to run down either side of the pocket.
+	- With experimentation, could find optimal placement down depth of pocket.
+	- Ensures some light on bottle and some for the pocket.
+	- Highly symmetrical aesthetics.
+	- But requires two holes in the back of each pocket, and still might get bumped when inserting/removing wine.
+	- Also has unpredicable visual effects based on proximity of bottle, all the way from absent to right next to part of the strip.
+	- ![option3](documentation/media/light_option3_combined.png)
+1. LED strip part way along one or both top edges.
+	- Guaranteed to be out of way of bottle, since bottle is round in a squarish hole.
+	- Requires "in" and "out" wiring to be doubled back on itself.
+	- Symmetry requires double the effort. Asymmetry only requires one hole.
+	- Basic animation is possible, since we have depth?
+	- Could do bottom edges for easier mounting but aesthetics "feel" like they would be poorer.
+	- ![option4](documentation/media/light_option4_combined.png)
+
 
 #### References
 
