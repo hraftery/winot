@@ -28,6 +28,9 @@ Here's to the discovery process.
             -   [References](#references-1)
     -   [CellarTracker Interaction](#cellartracker-interaction)
     -   [Inspiration](#inspiration)
+-   [Project Design](#project-design)
+    -   [System Block Diagram](#system-block-diagram)
+    -   [BOM](#bom)
 
 ---
 
@@ -284,4 +287,19 @@ It would look a little something like this:
 	- [Found a wine management software yet](https://www.winecellarinnovations.com/blog/2010/10/06/found-a-wine-management-software-yet/)
 	- [How to take wine inventory](https://home.binwise.com/blog/how-to-take-wine-inventory)
 	- [How to Use a Wine Cellar Tracking App to Inventory and Barcode Your Wine Collection](https://blog.vinfolio.com/2017/06/28/use-wine-cellar-tracking-app-inventory-barcode-wine-collection/)
-- 
+
+
+# Project Design
+
+Having explored the major risks and constraints, it's now time to come up with a design.
+
+## System Block Diagram
+
+![System Block Diagram](documentation/media/Winot-System_Block_Diagram-Rev_A.png)
+
+## BOM
+
+![Bill Of Materials](documentation/media/Winot-BOM.png)
+
+[Source](https://docs.google.com/spreadsheets/d/1Vril53xEtRFOpUpF5h6KM9TFz6D7Ar1aQKYEL28-_Lo/edit?usp=sharing)
+
