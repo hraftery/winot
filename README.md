@@ -31,6 +31,7 @@ Here's to the discovery process.
 -   [Project Design](#project-design)
     -   [System Block Diagram](#system-block-diagram)
     -   [BOM](#bom)
+    -   [Software Architecture](#software-architecture)
 
 ---
 
@@ -302,4 +303,8 @@ Having explored the major risks and constraints, it's now time to come up with a
 ![Bill Of Materials](documentation/media/Winot-BOM.png)
 
 [Source](https://docs.google.com/spreadsheets/d/1Vril53xEtRFOpUpF5h6KM9TFz6D7Ar1aQKYEL28-_Lo/edit?usp=sharing)
+
+## Software Architecture
+
+![Software Architecture](documentation/media/Winot-Software_Architecture-Rev_A.png)
 
