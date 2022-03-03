@@ -1,0 +1,5 @@
+version: '2'
+services:
+  led-strip-driver:
+    build: ./led-strip-driver
+    restart: always
