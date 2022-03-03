@@ -5,7 +5,7 @@ This repository contains the musings, misadventures and measurables from a resid
 
 Here's to the discovery process.
 
-![cheers](documentation/media/cheers.jpg)
+![cheers](img/cheers.jpg)
 
 ## Table of Contents
 -   [Project Selection](#project-selection)
@@ -85,7 +85,7 @@ And the winner?
 
 ---
 
-![Winot Recipe](documentation/media/Winot_Recipe.jpg)
+![Winot Recipe](img/Winot_Recipe.jpg)
 
 ---
 
@@ -239,21 +239,21 @@ Options:
 	- Highly symmetrical aesthetics.
 	- But requires two holes in the back of each pocket, and still might get bumped when inserting/removing wine.
 	- Also has unpredicable visual effects based on proximity of bottle, all the way from absent to right next to part of the strip.
-	- ![option3](documentation/media/light_option3_combined.png)
+	- ![option3](img/light_option3_combined.png)
 1. LED strip part way along one or both top edges.
 	- Guaranteed to be out of way of bottle, since bottle is round in a squarish hole.
 	- Requires "in" and "out" wiring to be doubled back on itself.
 	- Symmetry requires double the effort. Asymmetry only requires one hole.
 	- Basic animation is possible, since we have depth?
 	- Could do bottom edges for easier mounting but aesthetics "feel" like they would be poorer.
-	- ![option4](documentation/media/light_option4_combined.png)
+	- ![option4](img/light_option4_combined.png)
 
 
 #### References
 
 This is the sort of thing that is widely [available](https://www.jhmarket.com.au/leastyle-battery-operated-led-under-counter-lights-in-black-pack-of-6.html?gclid=Cj0KCQiAmKiQBhClARIsAKtSj-m5L7Szz0UcwTkiGnD8J5Tqh03MxcRDMQeKKnfYdnlQTA6yK28qMEcaAsgMEALw_wcB) and cheap. But is IR, so a deadend. And it's a bit bulky.
 
-![LEASTYLE Under Counter Lights](documentation/media/cs-lse-tl008-rgb-aaa-bl-6p-2.jpeg)
+![LEASTYLE Under Counter Lights](img/cs-lse-tl008-rgb-aaa-bl-6p-2.jpeg)
 
 [This](https://www.ebay.com.au/itm/261835853404) is 433MHz and getting close but requires 12V power.
 
@@ -275,16 +275,16 @@ A Raspberry Pi based web browser that allows the user to use CellarTracker hardl
 
 It would look a little something like this:
 
-![CellarTracker Interaction](documentation/media/Winot_CellarTracker-Interaction.png)
+![CellarTracker Interaction](img/Winot_CellarTracker-Interaction.png)
 
 
 ## Inspiration
 
 - The [InvMan S-1](https://www.cluso.com.au/invman) from Cluso Vision Systems by our friends at CircuitWise.
-![InvMan S-1](documentation/media/InvMan.webp)
+![InvMan S-1](img/InvMan.webp)
 - The [Pick To Light](https://www.monk-conveyors.com/pick-to-light/) system from Monk Conveyors
-![Pick To List - Pockets](documentation/media/pick_to_light-pockets.png)
-![Pick To List - Recessed Light](documentation/media/pick_to_light-recessed_light.png)
+![Pick To List - Pockets](img/pick_to_light-pockets.png)
+![Pick To List - Recessed Light](img/pick_to_light-recessed_light.png)
 - Turns out inventory solutions are sought after! And naturally, the Internet sees "apps" as the solution. Yep, another boring database to maintain by "entering all of your bottles into a large spreadsheet", or "organising you wine by producer, varietal or vintage". I'm falling asleep at the thought of it.
 	- [Found a wine management software yet](https://www.winecellarinnovations.com/blog/2010/10/06/found-a-wine-management-software-yet/)
 	- [How to take wine inventory](https://home.binwise.com/blog/how-to-take-wine-inventory)
@@ -297,17 +297,17 @@ Having explored the major risks and constraints, it's now time to come up with a
 
 ## System Block Diagram
 
-![System Block Diagram](documentation/media/Winot-System_Block_Diagram-Rev_A.png)
+![System Block Diagram](img/Winot-System_Block_Diagram-Rev_A.png)
 
 ## BOM
 
-![Bill Of Materials](documentation/media/Winot-BOM.png)
+![Bill Of Materials](img/Winot-BOM.png)
 
 [Source](https://docs.google.com/spreadsheets/d/1Vril53xEtRFOpUpF5h6KM9TFz6D7Ar1aQKYEL28-_Lo/edit?usp=sharing)
 
 ## Software Architecture
 
-![Software Architecture](documentation/media/Winot-Software_Architecture-Rev_A.png)
+![Software Architecture](img/Winot-Software_Architecture-Rev_A.png)
 
 # Project Build
 
