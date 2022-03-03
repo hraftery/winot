@@ -1,13 +1,19 @@
-FROM balenalib/%%BALENA_MACHINE_NAME%%-python:3.9-build
+# see https://www.balena.io/docs/reference/base-images/base-images/
+FROM balenalib/%%BALENA_MACHINE_NAME%%-python:3.10-build
 
 WORKDIR /usr/src/app
 
-RUN \
-    apt-get update && apt-get upgrade -y 
+# Copy requirements.txt first for better cache on later pushes
+COPY requirements.txt requirements.txt
 
-RUN \
-    pip3 install RPi.GPIO requests
+# pip install python deps from requirements.txt on the resin.io build server
+RUN pip install -r requirements.txt
 
-COPY *.py ./
+COPY src src
 
-CMD ["sleep", "infinity"]
+# Enable udevd so that plugged dynamic hardware devices show up in our container.
+# Requires "privileged: true" for this service in docker-compose.yml
+#ENV UDEV=1
+
+# main.py will run when container starts up on the device
+CMD ["python","-u","src/main.py"]

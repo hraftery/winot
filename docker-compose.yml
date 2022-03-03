@@ -3,3 +3,4 @@ services:
   led-strip-driver:
     build: ./led-strip-driver
     restart: always
+#    privileged: true
