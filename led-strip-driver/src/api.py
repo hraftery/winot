@@ -24,7 +24,8 @@ class Pixel(Resource):
         val = int(request.data, 0)
         if pixels.is_valid_pixel(val):
           pixels.pixels[pixel_id] = val
-          return {pixel_id: pixels[pixel_id]}
+          pixels.update_event.set()
+          return {pixel_id: pixels.pixels[pixel_id]}
         else:
           abort(422, message="Specified pixel value ({}) is not between 0x{08x} and 0x{08x}."
                               .format(request.data, pixels.COLOUR_MIN, pixels.COLOUR_MAX))
@@ -91,6 +92,7 @@ class Pixels(Resource):
           pixels.pixels[offset+i] = p
         else:
           abort(400, message="Could not parse data ({}) at index ({}) as pixel value.".format(p, i))
+      pixels.update_event.set()
       return self.get(offset)
 
 

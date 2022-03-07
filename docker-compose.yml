@@ -3,6 +3,11 @@ services:
   led-strip-driver:
     build: ./led-strip-driver
     restart: always
+    devices:
+      - "/dev/mem:/dev/mem"   # for rpi_ws281x, prevents "ws2811_init failed with code -5 (mmap() failed)"
+      - "/dev/vcio:/dev/vcio" # for rpi_ws281x, prevents "ws2811_init failed with code -9 (Failed to create mailbox device)"
+    cap_add:
+      - SYS_RAWIO
     ports:
       - "80:80" # temporary to make it easier to test
 #    privileged: true
