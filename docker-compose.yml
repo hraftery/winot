@@ -3,4 +3,6 @@ services:
   led-strip-driver:
     build: ./led-strip-driver
     restart: always
+    ports:
+      - "80:80" # temporary to make it easier to test
 #    privileged: true
