@@ -1,5 +1,5 @@
 from fastapi import FastAPI, status, HTTPException, Body, Path, Query, BackgroundTasks
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, HTMLResponse
 from enum import Enum
 
 # Some useful conversion utilities, but at this stage not used.
@@ -167,3 +167,21 @@ async def put_pixels(*, offset: int = offset_query_param,
   
   tasks.add_task(update_strip)
   return pixels.pixels
+
+
+@app.get("/redoc-try", include_in_schema=False)
+async def redoc_try_html():
+  html = f"""
+<!DOCTYPE html>
+<html>
+<body>
+  <div id="redoc-container"></div>
+  <script src="https://cdn.jsdelivr.net/npm/redoc@2.0.0-rc.55/bundles/redoc.standalone.min.js"> </script>
+  <script src="https://cdn.jsdelivr.net/gh/wll8/redoc-try@1.4.0/dist/try.js"></script>
+  <script>
+    initTry(`{app.openapi_url}`)
+  </script>
+</body>
+</html>
+"""
+  return HTMLResponse(html)
