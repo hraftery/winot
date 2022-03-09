@@ -1,7 +1,4 @@
-import threading
-
-
-MAX_NUM_PIXELS = 500
+MAX_NUM_PIXELS = 10#500
 
 # After far too much deliberation, I have opted to use 0xWWRRGGBB as internal LED
 # colour format. The Color library supports all sorts of other formats, but none
@@ -27,15 +24,6 @@ def is_valid_index(i):
 def is_valid_pixel(p):
   return isinstance(p, int) and p >= COLOUR_MIN and p <= COLOUR_MAX
 
-
-# Call set() on this to trigger an update based on the content of pixels.
-# Note threading is pre-emptive (asyncio is cooperative) so set() can cause
-# a context switch at any point, potentially interrupting the calling thread.
-# That's no big deal performance-wise, since it'll shortly switch back too.
-update_event = threading.Event()
-
-# If we need to protect pixels from concurrent access, this will do. At this
-# stage we don't, because read/writes are probably always atomic, and even if
-# they aren't, the driver reading a corrupted pixel value while the api is
-# writing it is quite inconsequential - perhaps a brief incorrect pixel colour.
-#lock = threading.Lock()
+# user may specify and call a LED strip update function using this global
+# allows decoupling of the implementation from the caller.
+strip_update_func = None

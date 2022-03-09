@@ -1,11 +1,15 @@
-import threading
+#import threading
 
 import api
+import pixels
 import driver
+
+# Hook up our driver to pixels so api can remain decoupled.
+pixels.strip_update_func = driver.update_strip
+
+# Expose the fastapi app to the outside world.
+app = api.app
 
 
 if __name__ == '__main__':
-  update_strip_thread = threading.Thread(target = driver.update_strip)
-  update_strip_thread.start()
-
-  api.app.run(host='0.0.0.0', port=80)
+  print("This script must be run with an ASGI/WSGI such as uvicorn.")
