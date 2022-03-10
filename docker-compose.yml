@@ -12,16 +12,3 @@ services:
       - SYS_RAWIO
     ports:
       - "80:80" # temporary to make it easier to test
-  
-  browser:
-    image: balenablocks/browser
-    environment:
-      - KIOSK=1
-    #TODO: likely useful to pick up the barcode scanner, but is there a smaller sledgehammer I can use?
-    privileged: true # required for UDEV to find plugged in peripherals such as a USB mouse
-    network_mode: host #TODO: why?
-#    ports:
-#        - '5011' # management API (optional)
-#        - '35173' # Chromium debugging port (optional)
-#    volumes:
-#      - 'settings:/data' # Only required if using PERSISTENT flag (see below)
