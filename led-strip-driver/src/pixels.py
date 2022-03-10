@@ -1,4 +1,6 @@
-MAX_NUM_PIXELS = 10#500
+import os
+
+MAX_NUM_PIXELS = int(os.getenv('MAX_NUM_PIXELS', '500'))
 
 # After far too much deliberation, I have opted to use 0xWWRRGGBB as internal LED
 # colour format. The Color library supports all sorts of other formats, but none

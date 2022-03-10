@@ -2,6 +2,8 @@ version: '2'
 services:
   led-strip-driver:
     build: ./led-strip-driver
+    environment:
+      - MAX_NUM_PIXELS=10 #TODO: supersede with dashboard Device Variables when we leave local mode.
     restart: always
     devices:
       - "/dev/mem:/dev/mem"   # for rpi_ws281x, prevents "ws2811_init failed with code -5 (mmap() failed)"
@@ -10,4 +12,16 @@ services:
       - SYS_RAWIO
     ports:
       - "80:80" # temporary to make it easier to test
-#    privileged: true
+  
+  browser:
+    image: balenablocks/browser
+    environment:
+      - KIOSK=1
+    #TODO: likely useful to pick up the barcode scanner, but is there a smaller sledgehammer I can use?
+    privileged: true # required for UDEV to find plugged in peripherals such as a USB mouse
+    network_mode: host #TODO: why?
+#    ports:
+#        - '5011' # management API (optional)
+#        - '35173' # Chromium debugging port (optional)
+#    volumes:
+#      - 'settings:/data' # Only required if using PERSISTENT flag (see below)

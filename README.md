@@ -366,10 +366,96 @@ strip.setPixelColor(1, rpi_ws281x.Color(255,0,0))
 strip.show()
 ```
 
+And fancier (a selection from [strandtest.py](https://github.com/rpi-ws281x/rpi-ws281x-python/blob/master/examples/strandtest.py)):
+
+```
+import time
+from rpi_ws281x import Color
+
+def wheel(pos):
+    """Generate rainbow colors across 0-255 positions."""
+    if pos < 85:
+        return Color(pos * 3, 255 - pos * 3, 0)
+    elif pos < 170:
+        pos -= 85
+        return Color(255 - pos * 3, 0, pos * 3)
+    else:
+        pos -= 170
+        return Color(0, pos * 3, 255 - pos * 3)
+
+def theaterChaseRainbow(strip, wait_ms=50):
+    """Rainbow movie theater light style chaser animation."""
+    for j in range(256):
+        for q in range(3):
+            for i in range(0, strip.numPixels(), 3):
+                strip.setPixelColor(i + q, wheel((i + j) % 255))
+            strip.show()
+            time.sleep(wait_ms / 1000.0)
+            for i in range(0, strip.numPixels(), 3):
+                strip.setPixelColor(i + q, 0)
+
+theaterChaseRainbow(strip)
+```
+
 I wanted to auto-document the API and got the hot tip from a colleague that fastapi >> Flask for that and other RESTful things. The Internet strongly agrees:
 
 - Old [hotness](https://stackoverflow.com/questions/14295322/what-tools-are-available-to-auto-produce-documentation-for-a-rest-api-written-in)
 - New [hotness](https://stackoverflow.com/questions/67849806/flask-how-to-automate-openapi-v3-documentation)
 
 So I bit the bullet and ported it over. Muuuuch better.
+
+- [Swagger UI](https://5fba0b0e46ba6ea4f1cfb5e40f3183a7.balena-devices.com/docs)
+- [ReDoc](https://5fba0b0e46ba6ea4f1cfb5e40f3183a7.balena-devices.com/redoc)
+- And now, best of both with [redoc try](https://5fba0b0e46ba6ea4f1cfb5e40f3183a7.balena-devices.com/redoc-try)
+
+`led-strip-driver` is done! Does all I need at the moment. On to the "app" that provides the user interface.
+
+Obvious choice is a web app, as outlined in the [Software Architecture](#software-architecture) diagram. First step - what's the kiosk going to be? Posed this question on Flowdock:
+
+---
+I’m looking for guidance on a starting point to create a kiosk app on the Raspberry Pi 7” Touchscreen.
+
+Pre-balena I’ve done this a few times with a minimal window manager, chromium and a startup script with a bunch of options to make it kiosky and do power management. Now I want to go non-DIY and leverage the balena-verse. I’m not even wedded to a browser and happy to write my UI in just about anything, provided I can show a few buttons, a hideable on-screen keyboard, and a webview.
+
+So far I’ve seen:
+
+- [balenalabs/balena-dash](https://github.com/balenalabs/balena-dash)
+- [Igalia/balena-wpe](https://github.com/Igalia/balena-wpe)
+- [balenalabs-incubator/balena-wpe](https://github.com/balenalabs-incubator/balena-wpe)
+- [balenablocks/electron](https://github.com/balenablocks/electron)
+- [jayatvars/balena-chromium-kiosk](https://github.com/jayatvars/balena-chromium-kiosk)
+- [balenablocks/browser](https://github.com/balenablocks/browser)
+- [mir-kiosk](https://snapcraft.io/blog/mir-kiosk-uses-mir)
+
+and am having a hard time figuring out how to avoid deep exploratory rabbit holes.
+
+---
+
+Responses indicate `balenablocks/browser` will do just fine, which makes sense. Feel like I'm missing out on wpe/electron/mir, but maybe they're just distractions.
+
+With the client sorted, on to the app itself. Oh boy. Do I want a web app, a Progressive Web App or a Single Page App? Do I get with the times and use JavaScript + React. Or get ahead of the curve with TypeScript and Svelte? Or do just stick with Python + Django or my mate Flask? What about vanilla JS or even something I actually enjoy, like Ruby on Rails?
+
+After *much* Googling and hand-wringing, decided that *if* I was to do a web app, it would be a PWA in Vanilla JS, adding frameworks and tools as I felt the need for them. [This](https://medium.com/james-johnson/a-simple-progressive-web-app-tutorial-f9708e5f2605) would be the starting point.
+
+But then... why do a web app at all? There's so much infrastructure (eg. the server and the client), the landscape is a hot mess, I'm not utilising of any of the advantages, the learning curve is steep and bumpy, none of my preferred languages are well supported, and besides, aren't I contributing to the downfall of modern society by using web technologies when native will do?
+
+What if I did a native app? The options are really:
+
+- C++ and Qt (either QWidgets or QML and Qt Quick)
+- Perl/Ruby/Python/C++ and wxWidgets
+- Python/C/C++/Rust and GtK
+- Python and Tkinter
+- Python and Kivy
+- Java and Swing/JavaFX
+- Pascal and Lazarus (Delphi clone)
+
+The choice is pretty clear to me, given I have some familiarity with everyone of those. Time to fire up **Qt Creator**!
+
+I hate that the first step is always "name your new project". Naming is hard - particularly as the first step! What do you name the app/main/ui service? After some research I see:
+
+- match the fleet name (eg. `inkyshot`)
+- `frontend` / `backend`
+- `eink`
+
+So am still a bit undecided. Nearly went with `app` to match the Software Architecture diagram, but that term has meaning in the balenaverse. So let's go with... `winot-gui`. Well scoped, nicely descriptive and hints that there should be some separation of concerns, even if nearly all functionality will be in the user interface service to begin with.
 
