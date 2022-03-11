@@ -1,13 +1,12 @@
 import QtQuick
-import QtQuick.Controls.Basic 6.2
-import Qt5Compat.GraphicalEffects
+import QtQuick.Controls
 
 Window {
     width: 480
     height: 800
     visible: true
     color: "#000000"
-    title: qsTr("Hello World")
+    title: qsTr("Winot")
 /*
     Timer {
         interval: 2000;
@@ -16,41 +15,40 @@ Window {
         onTriggered: console.log("color = " + btnPut.background)
     }
 */
+/*
+    Loader {
+        id: screenLoader
+        focus: true
+        anchors.fill: parent
+        sourceComponent: homeScreen
+        active: true
+    }
+*/
 
-    JellyButton {
-        id: btnPut
-        x: 127
-        y: 92
-        text: qsTr("Put")
-        upColor: "#B6D7A8"
-        downColor: "#D6F7C8"
+    Component {
+        id: homeScreen
+        HomeScreen {
+            onSigPut: {
+                stack.push(putScreen)
+                stack.currentItem.reset() //would prefer to call reset before pushing, but don't have access to currentItem then!
+            }
+        }
     }
 
-    JellyButton {
-        id: btnGet
-        x: 127
-        y: 255
-        text: qsTr("Get")
-        upColor: "#EA9999"
-        downColor: "#FFBBBB"
+    Component {
+        id: putScreen
+        PutScreen {
+            onSigHome: stack.pop()
+        }
     }
 
-    JellyButton {
-        id: btnDrank
-        x: 127
-        y: 434
-        text: qsTr("Drank")
-        upColor: "#F9CB9C"
-        downColor: "#FFEBBC"
-    }
-
-    JellyButton {
-        id: btnReturn
-        x: 127
-        y: 608
-        text: qsTr("Return")
-        upColor: "#A4C2F4"
-        downColor: "#C4E2FF"
+    StackView {
+        id: stack
+        initialItem: homeScreen
+        anchors.fill: parent
+        onCurrentItemChanged: {
+            currentItem.forceActiveFocus()
+        }
     }
 }
 

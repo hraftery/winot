@@ -1,11 +1,11 @@
-QT += quick
+QT += quick webview
 
 SOURCES += \
         main.cpp
 
-resources.files = main.qml JellyButton.qml
-resources.prefix = /$${TARGET}
-RESOURCES += resources
+qml.files = $$files(*.qml)
+qml.prefix = /qml
+RESOURCES += qml
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
@@ -18,3 +18,5 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
+DISTFILES += \
+    HomeButton.qml

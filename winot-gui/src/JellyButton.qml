@@ -6,7 +6,7 @@ Button {
     property color upColor
     property color downColor
 
-    id: btn
+    id: root
     width: 226
     height: 88
     font.pixelSize: 40

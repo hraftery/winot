@@ -1,13 +1,15 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QtWebView>
 
 
 int main(int argc, char *argv[])
 {
+    QtWebView::initialize();
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
 
-    const QUrl url(u"qrc:/winot-gui/main.qml"_qs);
+    const QUrl url(u"qrc:/qml/main.qml"_qs);
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl &objUrl) {
         if (!obj && url == objUrl)
