@@ -459,3 +459,6 @@ I hate that the first step is always "name your new project". Naming is hard - p
 
 So am still a bit undecided. Nearly went with `app` to match the Software Architecture diagram, but that term has meaning in the balenaverse. So let's go with... `winot-gui`. Well scoped, nicely descriptive and hints that there should be some separation of concerns, even if nearly all functionality will be in the user interface service to begin with.
 
+Man, that app was *hard*. Everytime I go to do UI I feel like I'm reinventing the wheel, designing buttons and setting spacing and establishing UX. A product of growing up with the Apple HIG? Twas so much simpler back then...
+
+Anyway, after a big slog, a complete V1 of the UI is done. Was brutal getting screens, tables, webviews and other pedestrian crap going. But would have only been worse as a web app, I think. So now ready to draw a line in the sand, and work on integration - getting `winot-gui` off the desktop, and building, deploying and running on balenaOS. Then we get to hook up the UI to the LED driver!

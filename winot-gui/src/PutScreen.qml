@@ -27,7 +27,7 @@ Item {
 
     Text {
         x: 45
-        y: 80
+        y: 70
         color: "#ffffff"
         lineHeight: 1.4
         text: "1. Scan or id the new wine bottle.\n2. Click Submit to add to CellarTracker.\n3. Complete the entry using bin #\n4. Place the bottle in the illuminated slot."
@@ -38,7 +38,7 @@ Item {
     Text {
         id: lblBin
         x: 369
-        y: 150
+        y: 140
         color: "#ffffff"
         text: "unknown"
         font.pixelSize: 22
@@ -49,7 +49,7 @@ Item {
     Text {
         id: lblStepMarker
         x: 18
-        y: 76 + step * 36
+        y: 66 + step * 35
         color: "#A6C798"
         text: "⮕"
         font.pixelSize: 26
@@ -58,7 +58,7 @@ Item {
     TextField {
         id: txtIdentifier
         x: 67
-        y: 243
+        y: 233
         width: 189
         height: 32
         color: "#000000"
@@ -73,7 +73,7 @@ Item {
     Button {
         id: btnSubmit
         x: 280
-        y: 235
+        y: 225
         width: 129
         height: 48
         text: qsTr("Submit")
@@ -83,19 +83,20 @@ Item {
         onClicked: {
             step = 2
             webView.visible = true
-            webView.url = "https://www.cellartracker.com/pickproducer.asp?szSearch=ident&PickWine=on"
+            webView.url = "https://www.cellartracker.com/pickproducer.asp?szSearch="+txtIdentifier.text+"&PickWine=on"
         }
     }
 
     WebView {
         id: webView
         x: 5
-        y: 289
+        y: 279
         width: 470
-        height: 507
+        height: 517
 
         visible: false
 
+        //Anything to get us the mobile version of the site.
         httpUserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1"
     }
 

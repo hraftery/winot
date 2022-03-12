@@ -32,6 +32,18 @@ Window {
                 stack.push(putScreen)
                 stack.currentItem.reset() //would prefer to call reset before pushing, but don't have access to currentItem then!
             }
+            onSigGet: {
+                stack.push(getScreen)
+                stack.currentItem.reset()
+            }
+            onSigDrank: {
+                stack.push(drankScreen)
+                stack.currentItem.reset()
+            }
+            onSigReturn: {
+                stack.push(returnScreen)
+                stack.currentItem.reset()
+            }
         }
     }
 
@@ -42,12 +54,36 @@ Window {
         }
     }
 
+    Component {
+        id: getScreen
+        GetScreen {
+            onSigHome: stack.pop()
+        }
+    }
+
+    Component {
+        id: drankScreen
+        DrankScreen {
+            onSigHome: stack.pop()
+        }
+    }
+
+    Component {
+        id: returnScreen
+        ReturnScreen {
+            onSigHome: stack.pop()
+        }
+    }
+
     StackView {
         id: stack
         initialItem: homeScreen
         anchors.fill: parent
         onCurrentItemChanged: {
             currentItem.forceActiveFocus()
+            if(currentItem.objectName == "HomeScreen") {
+                //TODO: turn off illumination
+            }
         }
     }
 }

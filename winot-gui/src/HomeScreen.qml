@@ -4,6 +4,7 @@ import Qt5Compat.GraphicalEffects
 
 Item {
     id: root
+    objectName: "HomeScreen"
 
     signal sigPut
     signal sigGet
@@ -23,7 +24,7 @@ Item {
     JellyButton {
         id: btnGet
         x: 127
-        y: 255
+        y: 263
         text: qsTr("Get")
         upColor: "#EA9999"
         downColor: "#FFBBBB"
@@ -43,7 +44,7 @@ Item {
     JellyButton {
         id: btnReturn
         x: 127
-        y: 608
+        y: 605
         text: qsTr("Return")
         upColor: "#A4C2F4"
         downColor: "#C4E2FF"
