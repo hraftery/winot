@@ -462,3 +462,1011 @@ So am still a bit undecided. Nearly went with `app` to match the Software Archit
 Man, that app was *hard*. Everytime I go to do UI I feel like I'm reinventing the wheel, designing buttons and setting spacing and establishing UX. A product of growing up with the Apple HIG? Twas so much simpler back then...
 
 Anyway, after a big slog, a complete V1 of the UI is done. Was brutal getting screens, tables, webviews and other pedestrian crap going. But would have only been worse as a web app, I think. So now ready to draw a line in the sand, and work on integration - getting `winot-gui` off the desktop, and building, deploying and running on balenaOS. Then we get to hook up the UI to the LED driver!
+
+Okay, now to port to Raspberry Pi. Here's goes. Difficult to find guidance which isn't either Qt 5 or RPi 4 specific. It doesn't help that both 64-bit Raspberry Pi OS and Qt 6 are both relatively new. Found two decent guides:
+
+- [Impressive code and guide from Vikto Petersson, CEO of Screenly.io](https://www.docker.com/blog/compiling-qt-with-docker-multi-stage-and-multi-platform/)
+- [TalOrg - Building Qt 6.2 on Raspberry Pi OS](https://www.tal.org/tutorials/building-qt-62-raspberry-pi)
+
+Cross-compilation is definitely the *right* way, but I'm going to try building on ARM first. It simplifies a complex problem a lot, and the balena ARM builders may be okay anyway.
+
+First attempt:
+
+```
+apt update
+apt install build-essential cmake ninja-build libfontconfig1-dev libdbus-1-dev libfreetype6-dev libicu-dev libinput-dev libxkbcommon-dev libssl-dev libpng-dev libjpeg-dev libglib2.0-dev
+apt install libgles2-mesa-dev libgbm-dev libdrm-dev
+apt install libx11-dev libxcb1-dev libxext-dev libxi-dev libxcomposite-dev libxcursor-dev libxtst-dev libxrandr-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-util0-dev libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libxcb-xinput-dev
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtbase-everywhere-src-6.2.3.tar.xz
+tar xf qtbase-everywhere-src-6.2.3.tar.xz
+```
+
+The guide then says this, but I'm getting nowhere with that, even "fixing" it to the second version:
+
+```
+mkdir qtbasebuild && cd qtbasebuild
+/opt/cmake/bin/cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/opt/Qt/6.2.3-armv7l -DQT_FEATURE_opengles2=ON -DQT_FEATURE_opengles3=ON -DCMAKE_TOOLCHAIN_FILE=tc.cmake -DQT_AVOID_CMAKE_ARCHIVING_API=ON ../qtbase-everywhere-src-6.2.3
+/usr/bin/cmake -G Ninja -DCMAKE_MAKE_PROGRAM=/usr/bin/cmake -DCMAKE_INSTALL_PREFIX=/opt/Qt/6.2.3-armv7l -DQT_FEATURE_opengles2=ON -DQT_FEATURE_opengles3=ON -DCMAKE_TOOLCHAIN_FILE=tc.cmake -DQT_AVOID_CMAKE_ARCHIVING_API=ON ../qtbase-everywhere-src-6.2.3
+```
+
+So instead, try to get a vanilla build going first:
+
+```
+cd qtbase-everywhere-src-6.2.3
+sudo dphys-swapfile swapoff
+sudo vi /etc/dphys-swapfile # change CONF_SWAPSIZE to 1024
+sudo dphys-swapfile swapon
+./configure 
+cmake --build . --parallel
+```
+
+Note:
+
+- Qt embedded existed in Qt 4, but is now obsolete. I think that goes for OpenGL ES (GLES - OpenGL for Embedded System) too.
+- As of Qt 5.0, Qt no longer has its own window system (QWS) implementation. For single-process use cases, the Qt Platform Abstraction is a superior solution; multi-process use cases are supported through Wayland.
+- EGLFS is a platform plugin for running Qt applications on top of EGL and OpenGL ES 2.0, without an actual windowing system like X11 or Wayland. It is the recommended plugin for modern Embedded Linux devices that include a GPU.
+- *Qt for Device Creation* is a **commercial offering** that provides the Qt development framework for embedded Linux and Real Time Operating Systems (RTOS).
+	- Yocto tools and recipes, plus embedded Linux cross-compilation environments for reference devices.
+- [Configure an Embedded Linux Device](https://doc.qt.io/qt-6/configure-linux-device.html) is the official place to start.
+
+Given Qt for Device Creation is commercial, I have a feeling the embedded route might be *too hard* and I'm better off pursuing execution on top of Raspberry Pi OS / X11.
+
+Trying cross-compiling on a DigitalOcean beast:
+
+```
+ssh root@188.166.216.202
+apt update
+apt upgrade
+apt install build-essential cmake ninja-build libfontconfig1-dev libdbus-1-dev libfreetype6-dev libicu-dev libinput-dev libxkbcommon-dev libssl-dev libpng-dev libjpeg-dev libglib2.0-dev
+apt install libgles2-mesa-dev libgbm-dev libdrm-dev
+apt install libx11-dev libxcb1-dev libxext-dev libxi-dev libxcomposite-dev libxcursor-dev libxtst-dev libxrandr-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-util0-dev libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libxcb-xinput-dev
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtbase-everywhere-src-6.2.3.tar.xz
+tar xf qtbase-everywhere-src-6.2.3.tar.xz 
+cd qtbase-everywhere-src-6.2.3/
+./configure
+cmake --build . --parallel
+cmake --install .
+```
+
+Easy. But useless on its own. Now will it cross compile? Using variations on [this guide](https://wiki.qt.io/Raspberry_Pi_Beginners_Guide) for Qt 5.
+
+```
+cd
+wget https://downloads.raspberrypi.org/raspios_arm64/images/raspios_arm64-2022-01-28/2022-01-28-raspios-bullseye-arm64.zip
+apt install unzip
+unzip raspios_arm64-2022-01-28/2022-01-28-raspios-bullseye-arm64.zip
+mkdir /mnt/rasp-pi-rootfs
+fdisk -l 2022-01-28-raspios-bullseye-arm64.img # note "Start" of Linux partition. Let offset = Start * sector size.
+mount -o loop,offset=272629760 2022-01-28-raspios-bullseye-arm64.img /mnt/rasp-pi-rootfs
+apt install gcc make gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
+rm -R qtbase-everywhere-src-6.2.3
+tar xf qtbase-everywhere-src-6.2.3.tar.xz 
+```
+
+Okay, how to configure...
+
+See [mkspecs/devices](https://code.qt.io/cgit/qt/qtbase.git/tree/mkspecs/devices) for `-device`. `linux-rasp-pi3-g++` is obvious choice, avoiding `vc4`/`mesa` for now. Bugger, according to [this](https://doc-snapshots.qt.io/qt6-dev/configure-linux-device.html#toolchain-files-versus-device-makespecs) this is "no longer sufficient". Crap "cross-compiling Qt requires a host build of Qt being available". Shouldn't have deleted it!
+
+```
+./configure -prefix /opt/qt-host
+cmake --build . --parallel
+cmake --install .
+cd ..
+mv qtbase-everywhere-src-6.2.3 qtbase-everywhere-src-6.2.3-host
+tar xf qtbase-everywhere-src-6.2.3.tar.xz 
+mv qtbase-everywhere-src-6.2.3 qtbase-everywhere-src-6.2.3-cross
+mkdir qtbasebuild && cd qtbasebuild
+vi ../qtbase-everywhere-src-6.2.3-cross/toolchain.cmake # contents below
+../qtbase-cross/configure -nomake examples -nomake tests -qt-host-path ../qtbase-host -prefix /usr/local/qt6 -- -DCMAKE_TOOLCHAIN_FILE=../qtbase-cross/toolchain.cmake -DQT_BUILD_TOOLS_WHEN_CROSSCOMPILING=ON
+```
+
+Contents of `toolchain.cmake`:
+
+```
+cmake_minimum_required(VERSION 3.16)
+include_guard(GLOBAL)
+
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+
+set(TARGET_SYSROOT /mnt/rasp-pi-rootfs)
+set(CROSS_COMPILER /usr/bin)
+
+set(CMAKE_SYSROOT ${TARGET_SYSROOT})
+
+set(ENV{PKG_CONFIG_PATH} "")
+set(ENV{PKG_CONFIG_LIBDIR} ${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig)
+set(ENV{PKG_CONFIG_SYSROOT_DIR} ${CMAKE_SYSROOT})
+
+set(CMAKE_C_COMPILER ${CROSS_COMPILER}/aarch64-linux-gnu-gcc)
+set(CMAKE_CXX_COMPILER ${CROSS_COMPILER}/aarch64-linux-gnu-g++)
+
+set(QT_COMPILER_FLAGS "-march=armv8-a+crc -mtune=cortex-a53 -ftree-vectorize")
+set(QT_COMPILER_FLAGS_RELEASE "-O2 -pipe")
+set(QT_LINKER_FLAGS "-Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed")
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+
+include(CMakeInitializeConfigs)
+
+function(cmake_initialize_per_config_variable _PREFIX _DOCSTRING)
+  if (_PREFIX MATCHES "CMAKE_(C|CXX|ASM)_FLAGS")
+    set(CMAKE_${CMAKE_MATCH_1}_FLAGS_INIT "${QT_COMPILER_FLAGS}")
+
+    foreach (config DEBUG RELEASE MINSIZEREL RELWITHDEBINFO)
+      if (DEFINED QT_COMPILER_FLAGS_${config})
+        set(CMAKE_${CMAKE_MATCH_1}_FLAGS_${config}_INIT "${QT_COMPILER_FLAGS_${config}}")
+      endif()
+    endforeach()
+  endif()
+
+  if (_PREFIX MATCHES "CMAKE_(SHARED|MODULE|EXE)_LINKER_FLAGS")
+    foreach (config SHARED MODULE EXE)
+      set(CMAKE_${config}_LINKER_FLAGS_INIT "${QT_LINKER_FLAGS}")
+    endforeach()
+  endif()
+
+  _cmake_initialize_per_config_variable(${ARGV})
+endfunction()
+```
+
+Failed on OpenGL. Want to use OpenGL Desktop but haven't found the flag. Tried `-opengl es2` which failed with same error. Hmm, seems it's because the `sysroot` has none of the required libaries. How best to install libaries into `sysroot`?
+
+1. Copy them from a Raspberry Pi.
+	- Can be sure they're installed correctly, but tricky to ensure you have all the right files and all the paths are intact.
+2. Download a binary distribution.
+	- Great if it exists...
+3. Cross-compile them.
+	- A lot of work. Although, the [tttapa/RPi-Cpp-Toolchain](https://tttapa.github.io/Pages/Raspberry-Pi/C++-Development/index.html) repo and docker container makes it as easy as possible. Lots of great work there, which means there's a learning curve just to take advantage of it!
+4. Add `dpkg` to the cross-compiling toolchain, as described for [LFS](http://www.linuxfromscratch.org/hints/downloads/files/ATTACHMENTS/dpkg/status)
+	- Sounds a bit fanciful, but I don't know much about LFS (Linux From Scratch) or BLFS (Beyond LFS).
+5. Use `qemu-debootstrap` to get an emulated [shell](https://stackoverflow.com/a/58422339/3697870).
+	- Veeery interesting. Potentially represents the best of all the previous options?
+
+Nearly posted this:
+
+> Hey @team , I’m about to go down a rabbit hole and know a lot of you have seen further than I have. I’m making good progress on a build process for Qt apps on RPi3, but it’s not easy. Which makes me wonder whether I can zoom out and solve the essence of the problem, instead of just the instance. I’m starting to see balena as this sort of translation layer between non-embedded and embedded software development, and wonder whether the pain of porting software that runs on the Desktop or the cloud to a physical (probably-ARM) device is one balena ought to ease.
+
+> So I’m putting my misspent youth, getting Open Source software to run on the evil Darwin OS, to use.
+
+Until I realised I don't know what balena really provides out of the box in terms of qemu and cross-compilation, or even native compilation on arm hardware??
+
+Argh, went down rabbit hole of:
+
+- `qemu-debootstrap` actually creates all new Debian/Ubuntu userspace, instead of "adopting" the Raspberry Pi OS I have.
+- So what about emulating a Pi, and using the OS image? Well, [rabbit holes](https://azeria-labs.com/emulate-raspberry-pi-with-qemu/) in [rabbit holes](https://github.com/dhruvvyas90/qemu-rpi-kernel).
+- Basically, anything is possible, but you're on your own with the latest 64-bit OS and RPi3, which feels like no-mans land.
+
+After a long battle, and compiling QEMU 6.2.0 from source, I tried:
+
+```
+mount -o offset=4194304,sizelimit=268435456 -t vfat 2022-01-28-raspios-bullseye-arm64.img /mnt/rasp-pi-rootfs/boot
+cp /mnt/rasp-pi-rootfs/boot/kernel8.img ./
+cp /mnt/rasp-pi-rootfs/boot/bcm2710-rpi-3-b-plus.dtb ./
+umount /mnt/rasp-pi-rootfs/boot
+umount /mnt/rasp-pi-rootfs
+qemu-img resize -f raw 2022-01-28-raspios-bullseye-arm64.img 4G
+qemu-6.2.0/build/qemu-system-aarch64 -m 1024 -M raspi3b -kernel kernel8.img -dtb bcm2710-rpi-3-b-plus.dtb -drive file=2022-01-28-raspios-bullseye-arm64.img,if=sd,format=raw -append "console=ttyAMA0 root=/dev/mmcblk0p2 rw rootwait rootfstype=ext4" -nographic -device usb-net,netdev=net0 -netdev user,id=net0,hostfwd=tcp::5555-:22
+```
+
+And it booted!
+
+Successful boot:
+
+```
+[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x410fd034]
+[    0.000000] Linux version 5.10.92-v8+ (dom@buildbot) (aarch64-linux-gnu-gcc-8 (Ubuntu/Linaro 8.4.0-3ubuntu1) 8.4.0, GNU ld (GNU Binutils for Ubuntu) 2.34) #1514 SMP PREEMPT Mon Jan 17 17:39:38 GMT 2022
+[    0.000000] Machine model: Raspberry Pi 3 Model B+
+[    0.000000] efi: UEFI not found.
+[    0.000000] Reserved memory: created CMA memory pool at 0x0000000038000000, size 64 MiB
+[    0.000000] OF: reserved mem: initialized node linux,cma, compatible id shared-dma-pool
+[    0.000000] Zone ranges:
+[    0.000000]   DMA      [mem 0x0000000000000000-0x000000003bffffff]
+[    0.000000]   DMA32    empty
+[    0.000000]   Normal   empty
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x0000000000000000-0x000000003bffffff]
+[    0.000000] Initmem setup node 0 [mem 0x0000000000000000-0x000000003bffffff]
+[    0.000000] percpu: Embedded 32 pages/cpu s91416 r8192 d31464 u131072
+[    0.000000] Detected VIPT I-cache on CPU0
+[    0.000000] CPU features: detected: ARM erratum 845719
+[    0.000000] CPU features: detected: ARM erratum 843419
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 241920
+[    0.000000] Kernel command line: console=ttyAMA0 root=/dev/mmcblk0p2 rw rootwait rootfstype=ext4
+[    0.000000] Dentry cache hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+[    0.000000] Inode-cache hash table entries: 65536 (order: 7, 524288 bytes, linear)
+[    0.000000] mem auto-init: stack:off, heap alloc:off, heap free:off
+[    0.000000] Memory: 874704K/983040K available (11136K kernel code, 1950K rwdata, 3988K rodata, 3712K init, 1253K bss, 42800K reserved, 65536K cma-reserved)
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=4, Nodes=1
+[    0.000000] ftrace: allocating 36801 entries in 144 pages
+[    0.000000] ftrace: allocated 144 pages with 2 groups
+[    0.000000] rcu: Preemptible hierarchical RCU implementation.
+[    0.000000] rcu: 	RCU event tracing is enabled.
+[    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=256 to nr_cpu_ids=4.
+[    0.000000] 	Trampoline variant of Tasks RCU enabled.
+[    0.000000] 	Rude variant of Tasks RCU enabled.
+[    0.000000] 	Tracing variant of Tasks RCU enabled.
+[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=4
+[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[    0.000000] random: get_random_bytes called from start_kernel+0x3b0/0x570 with crng_init=0
+[    0.000000] arch_timer: cp15 timer(s) running at 62.50MHz (phys).
+[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x1cd42e208c, max_idle_ns: 881590405314 ns
+[    0.000237] sched_clock: 56 bits at 62MHz, resolution 16ns, wraps every 4398046511096ns
+[    0.011055] Console: colour dummy device 80x25
+[    0.013147] Calibrating delay loop (skipped), value calculated using timer frequency.. 125.00 BogoMIPS (lpj=250000)
+[    0.013391] pid_max: default: 32768 minimum: 301
+[    0.014855] LSM: Security Framework initializing
+[    0.018636] Mount-cache hash table entries: 2048 (order: 2, 16384 bytes, linear)
+[    0.018741] Mountpoint-cache hash table entries: 2048 (order: 2, 16384 bytes, linear)
+[    0.046045] cgroup: Disabling memory control group subsystem
+[    0.085212] rcu: Hierarchical SRCU implementation.
+[    0.092502] EFI services will not be available.
+[    0.099757] smp: Bringing up secondary CPUs ...
+[    0.104891] Detected VIPT I-cache on CPU1
+[    0.105781] CPU1: Booted secondary processor 0x0000000001 [0x410fd034]
+[    0.112657] Detected VIPT I-cache on CPU2
+[    0.112825] CPU2: Booted secondary processor 0x0000000002 [0x410fd034]
+[    0.116544] Detected VIPT I-cache on CPU3
+[    0.116695] CPU3: Booted secondary processor 0x0000000003 [0x410fd034]
+[    0.117368] smp: Brought up 1 node, 4 CPUs
+[    0.117477] SMP: Total of 4 processors activated.
+[    0.117592] CPU features: detected: 32-bit EL0 Support
+[    0.117669] CPU features: detected: CRC32 instructions
+[    0.117739] CPU features: detected: 32-bit EL1 Support
+[    0.368102] CPU: All CPU(s) started at EL2
+[    0.368671] alternatives: patching kernel code
+[    0.389101] devtmpfs: initialized
+[    0.424971] Enabled cp15_barrier support
+[    0.425281] Enabled setend support
+[    0.426769] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[    0.427080] futex hash table entries: 1024 (order: 4, 65536 bytes, linear)
+[    0.435929] pinctrl core: initialized pinctrl subsystem
+[    0.452003] DMI not present or invalid.
+[    0.455147] NET: Registered protocol family 16
+[    0.482771] DMA: preallocated 128 KiB GFP_KERNEL pool for atomic allocations
+[    0.484988] DMA: preallocated 128 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[    0.485551] DMA: preallocated 128 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+[    0.486195] audit: initializing netlink subsys (disabled)
+[    0.489186] audit: type=2000 audit(0.464:1): state=initialized audit_enabled=0 res=1
+[    0.493430] thermal_sys: Registered thermal governor 'step_wise'
+[    0.497137] cpuidle: using governor menu
+[    0.498474] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[    0.499993] ASID allocator initialised with 65536 entries
+[    0.501224] Serial: AMBA PL011 UART driver
+[    0.548465] bcm2835-mbox 3f00b880.mailbox: mailbox enabled
+[    0.566502] raspberrypi-firmware soc:firmware: Attached to firmware from 1970-01-05T00:12:17, variant unknown
+[    0.570138] raspberrypi-firmware soc:firmware: Firmware hash is 000000000000000000000000115dbb60ffffffc0
+[    0.659747] bcm2835-dma 3f007000.dma: DMA legacy API manager, dmachans=0x1
+[    0.675275] vgaarb: loaded
+[    0.677753] SCSI subsystem initialized
+[    0.679727] usbcore: registered new interface driver usbfs
+[    0.680177] usbcore: registered new interface driver hub
+[    0.680708] usbcore: registered new device driver usb
+[    0.682737] usb_phy_generic phy: supply vcc not found, using dummy regulator
+[    0.706032] clocksource: Switched to clocksource arch_sys_counter
+[    2.501182] VFS: Disk quotas dquot_6.6.0
+[    2.501498] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    2.502438] FS-Cache: Loaded
+[    2.503500] CacheFiles: Loaded
+[    2.545421] NET: Registered protocol family 2
+[    2.547286] IP idents hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    2.557843] tcp_listen_portaddr_hash hash table entries: 512 (order: 1, 8192 bytes, linear)
+[    2.558004] TCP established hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    2.558259] TCP bind hash table entries: 8192 (order: 5, 131072 bytes, linear)
+[    2.558533] TCP: Hash tables configured (established 8192 bind 8192)
+[    2.560528] UDP hash table entries: 512 (order: 2, 16384 bytes, linear)
+[    2.560820] UDP-Lite hash table entries: 512 (order: 2, 16384 bytes, linear)
+[    2.563731] NET: Registered protocol family 1
+[    2.569527] RPC: Registered named UNIX socket transport module.
+[    2.569732] RPC: Registered udp transport module.
+[    2.569773] RPC: Registered tcp transport module.
+[    2.569802] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[    2.569996] PCI: CLS 0 bytes, default 64
+[    2.582674] hw perfevents: enabled with armv8_cortex_a53 PMU driver, 5 counters available
+[    2.584020] kvm [1]: IPA Size Limit: 40 bits
+[    2.591275] kvm [1]: Hyp mode initialized successfully
+[    2.601276] Initialise system trusted keyrings
+[    2.604168] workingset: timestamp_bits=46 max_order=18 bucket_order=0
+[    2.617444] zbud: loaded
+[    2.624499] FS-Cache: Netfs 'nfs' registered for caching
+[    2.628954] NFS: Registering the id_resolver key type
+[    2.629380] Key type id_resolver registered
+[    2.629445] Key type id_legacy registered
+[    2.630203] nfs4filelayout_init: NFSv4 File Layout Driver Registering...
+[    2.630389] nfs4flexfilelayout_init: NFSv4 Flexfile Layout Driver Registering...
+[    2.635636] Key type asymmetric registered
+[    2.635825] Asymmetric key parser 'x509' registered
+[    2.636107] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 249)
+[    2.637444] io scheduler mq-deadline registered
+[    2.637707] io scheduler kyber registered
+[    2.649640] raspberrypi-exp-gpio soc:firmware:expgpio: Failed to get GPIO 0 config (0 80)
+[    2.649901] raspberrypi-exp-gpio soc:firmware:expgpio: Failed to get GPIO 1 config (0 81)
+[    2.650092] raspberrypi-exp-gpio soc:firmware:expgpio: Failed to get GPIO 2 config (0 82)
+[    2.650277] raspberrypi-exp-gpio soc:firmware:expgpio: Failed to get GPIO 3 config (0 83)
+[    2.650451] raspberrypi-exp-gpio soc:firmware:expgpio: Failed to get GPIO 4 config (0 84)
+[    2.650826] raspberrypi-exp-gpio soc:firmware:expgpio: Failed to get GPIO 5 config (0 85)
+[    2.651027] raspberrypi-exp-gpio soc:firmware:expgpio: Failed to get GPIO 6 config (0 86)
+[    2.651215] raspberrypi-exp-gpio soc:firmware:expgpio: Failed to get GPIO 7 config (0 87)
+[    2.653801] bcm2708_fb soc:fb: Unable to determine number of FBs. Disabling driver.
+[    2.653988] bcm2708_fb: probe of soc:fb failed with error -2
+[    2.663563] bcm2835-aux-uart 3f215040.serial: there is not valid maps for state default
+[    2.670268] bcm2835-rng 3f104000.rng: hwrng registered
+[    2.671447] vc-mem: phys_addr:0x00000000 mem_base=0x00000000 mem_size:0x00000000(0 MiB)
+[    2.674857] gpiomem-bcm2835 3f200000.gpiomem: Initialised: Registers at 0x3f200000
+[    2.677230] cacheinfo: Unable to detect cache hierarchy for CPU 0
+[    2.732519] brd: module loaded
+[    2.766632] loop: module loaded
+[    2.769189] bcm2835-power bcm2835-power: ASB register ID returned 0x00000000
+[    2.772944] Loading iSCSI transport class v2.0-870.
+[    2.785407] libphy: Fixed MDIO Bus: probed
+[    2.788057] usbcore: registered new interface driver r8152
+[    2.788239] usbcore: registered new interface driver lan78xx
+[    2.788407] usbcore: registered new interface driver smsc95xx
+[    2.789507] dwc_otg: version 3.00a 10-AUG-2012 (platform bus)
+[    2.994605] Core Release: 2.94a
+[    2.994956] Setting default values for core params
+[    2.996808] Finished setting default values for core params
+[    3.199392] Using Buffer DMA mode
+[    3.199504] Periodic Transfer Interrupt Enhancement - disabled
+[    3.199545] Multiprocessor Interrupt Enhancement - disabled
+[    3.199641] OTG VER PARAM: 0, OTG VER FLAG: 0
+[    3.200042] Shared Tx FIFO mode
+[    3.204403] 
+[    3.204500] WARN::dwc_otg_hcd_init:1074: FIQ DMA bounce buffers: virt = ffffffc011779000 dma = 0x00000000f8080000 len=9024
+[    3.204702] FIQ FSM acceleration enabled for :
+[    3.204702] Non-periodic Split Transactions
+[    3.204702] Periodic Split Transactions
+[    3.204702] High-Speed Isochronous Endpoints
+[    3.204702] Interrupt/Control Split Transaction hack enabled
+[    3.205245] 
+[    3.205277] WARN::hcd_init_fiq:497: MPHI regs_base at ffffffc01161d000
+[    3.206547] dwc_otg 3f980000.usb: DWC OTG Controller
+[    3.207428] dwc_otg 3f980000.usb: new USB bus registered, assigned bus number 1
+[    3.208468] dwc_otg 3f980000.usb: irq 74, io mem 0x00000000
+[    3.209387] Init: Port Power? op_state=1
+[    3.209445] Init: Power Port (1)
+[    3.217946] usb usb1: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice= 5.10
+[    3.218005] usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    3.218049] usb usb1: Product: DWC OTG Controller
+[    3.218092] usb usb1: Manufacturer: Linux 5.10.92-v8+ dwc_otg_hcd
+[    3.218131] usb usb1: SerialNumber: 3f980000.usb
+[    3.223848] hub 1-0:1.0: USB hub found
+[    3.224628] hub 1-0:1.0: 1 port detected
+[    3.236730] usbcore: registered new interface driver uas
+[    3.237128] usbcore: registered new interface driver usb-storage
+[    3.238313] mousedev: PS/2 mouse device common for all mice
+[    3.246707] bcm2835-wdt bcm2835-wdt: Broadcom BCM2835 watchdog timer
+[    3.247606] cpu cpu0: Cannot get clock for CPU0
+[    3.247711] raspberrypi-cpufreq: probe of raspberrypi-cpufreq failed with error -2
+[    3.249409] sdhci: Secure Digital Host Controller Interface driver
+[    3.249450] sdhci: Copyright(c) Pierre Ossman
+[    3.254843] mmc-bcm2835 3f300000.mmcnr: could not get clk, deferring probe
+[    3.259599] sdhost-bcm2835 3f202000.mmc: could not get clk, deferring probe
+[    3.260184] sdhci-pltfm: SDHCI platform and OF driver helper
+[    3.271009] raspberrypi-exp-gpio soc:firmware:expgpio: Failed to get GPIO 2 config (0 82)
+[    3.271544] raspberrypi-exp-gpio soc:firmware:expgpio: Failed to get GPIO 2 config (0 82)
+[    3.273794] leds-gpio: probe of leds failed with error -5
+[    3.275822] ledtrig-cpu: registered to indicate activity on CPUs
+[    3.277360] hid: raw HID events driver (C) Jiri Kosina
+[    3.278296] usbcore: registered new interface driver usbhid
+[    3.278349] usbhid: USB HID core driver
+[    3.279150] ashmem: initialized
+[    3.286570] bcm2835_vchiq 3f00b840.mailbox: failed to set channelbase
+[    3.286693] vchiq: could not load vchiq
+[    3.289506] Initializing XFRM netlink socket
+[    3.289989] NET: Registered protocol family 17
+[    3.291489] Key type dns_resolver registered
+[    3.293106] registered taskstats version 1
+[    3.293272] Loading compiled-in X.509 certificates
+[    3.296548] Key type ._fscrypt registered
+[    3.296606] Key type .fscrypt registered
+[    3.296642] Key type fscrypt-provisioning registered
+[    3.332286] uart-pl011 3f201000.serial: cts_event_workaround enabled
+[    3.333774] 3f201000.serial: ttyAMA0 at MMIO 0x3f201000 (irq = 99, base_baud = 0) is a PL011 rev2
+[    3.370044] printk: console [ttyAMA0] enabled
+[    3.373824] raspberrypi-exp-gpio soc:firmware:expgpio: Failed to get GPIO 5 config (0 85)
+[    3.376078] raspberrypi-exp-gpio soc:firmware:expgpio: Failed to get GPIO 5 config (0 85)
+[    3.376382] reg-fixed-voltage: probe of cam1_regulator failed with error -5
+[    3.379824] bcm2835-aux-uart 3f215040.serial: there is not valid maps for state default
+[    3.380950] bcm2835-aux-uart 3f215040.serial: error -ENOSPC: unable to register 8250 port
+[    3.381521] bcm2835-aux-uart: probe of 3f215040.serial failed with error -28
+[    3.384316] bcm2835_thermal 3f212000.thermal: Not able to read trip_temp: -33
+[    3.470976] random: fast init done
+[    3.484771] bcm2835-clk 3f101000.cprman: tsens: couldn't lock PLL
+[    3.485140] bcm2835_thermal: probe of 3f212000.thermal failed with error -33
+[    3.487906] mmc-bcm2835 3f300000.mmcnr: mmc_debug:0 mmc_debug2:0
+[    3.488104] mmc-bcm2835 3f300000.mmcnr: DMA channel allocated
+[    3.493961] Indeed it is in host mode hprt0 = 00021101
+[    3.516761] sdhost: log_buf @ (____ptrval____) (c2b91000)
+[    3.585765] mmc0: sdhost-bcm2835 loaded - DMA enabled (>1)
+[    3.587923] of_cfs_init
+[    3.590959] of_cfs_init: OK
+[    3.603774] uart-pl011 3f201000.serial: no DMA platform data
+[    3.611504] Waiting for root device /dev/mmcblk0p2...
+[    3.627189] mmc0: host does not support reading read-only switch, assuming write-enable
+[    3.628541] mmc0: new high speed SDHC card at address 4567
+[    3.633399] mmcblk0: mmc0:4567 QEMU! 4.00 GiB
+[    3.654382]  mmcblk0: p1 p2
+[    3.716991] usb 1-1: new full-speed USB device number 2 using dwc_otg
+[    3.723991] Indeed it is in host mode hprt0 = 00021101
+[    3.743910] EXT4-fs (mmcblk0p2): mounted filesystem with ordered data mode. Opts: (null)
+[    3.744700] VFS: Mounted root (ext4 filesystem) on device 179:2.
+[    3.750183] devtmpfs: mounted
+[    3.781694] Freeing unused kernel memory: 3712K
+[    3.784329] Run /sbin/init as init process
+[    3.961908] usb 1-1: New USB device found, idVendor=0409, idProduct=55aa, bcdDevice= 1.01
+[    3.962195] usb 1-1: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+[    3.962388] usb 1-1: Product: QEMU USB Hub
+[    3.962599] usb 1-1: Manufacturer: QEMU
+[    3.962706] usb 1-1: SerialNumber: 314159-1
+[    3.965475] hub 1-1:1.0: USB hub found
+[    3.966886] hub 1-1:1.0: 8 ports detected
+[    4.302342] usb 1-1.1: new full-speed USB device number 3 using dwc_otg
+usbnet: failed control transaction: request 0x8006 value 0x600 index 0x0 length 0xa
+usbnet: failed control transaction: request 0x8006 value 0x600 index 0x0 length 0xa
+usbnet: failed control transaction: request 0x8006 value 0x600 index 0x0 length 0xa
+[    4.434093] usb 1-1.1: New USB device found, idVendor=0525, idProduct=a4a2, bcdDevice= 0.00
+[    4.434506] usb 1-1.1: New USB device strings: Mfr=1, Product=2, SerialNumber=10
+[    4.434772] usb 1-1.1: Product: RNDIS/QEMU USB Network Device
+[    4.435645] usb 1-1.1: Manufacturer: QEMU
+[    4.435935] usb 1-1.1: SerialNumber: 1-1.1
+[    5.690839] systemd[1]: System time before build time, advancing clock.
+[    6.194622] NET: Registered protocol family 10
+[    6.211994] Segment Routing with IPv6
+[    6.539142] systemd[1]: systemd 247.3-6 running in system mode. (+PAM +AUDIT +SELINUX +IMA +APPARMOR +SMACK +SYSVINIT +UTMP +LIBCRYPTSETUP +GCRYPT +GNUTLS +ACL +XZ +LZ4 +ZSTD +SECCOMP +BLKID +ELFUTILS +KMOD +IDN2 -IDN +PCRE2 default-hierarchy=unified)
+[    6.548722] systemd[1]: Detected architecture arm64.
+
+Welcome to Debian GNU/Linux 11 (bullseye)!
+
+[    6.585867] systemd[1]: Set hostname to <raspberrypi>.
+[    6.650201] random: systemd: uninitialized urandom read (16 bytes read)
+[    6.650946] systemd[1]: Initializing machine ID from random generator.
+[    7.294139] random: crng init done
+[    9.075302] systemd[1]: /lib/systemd/system/plymouth-start.service:16: Unit configured to use KillMode=none. This is unsafe, as it disables systemd's process lifecycle management for the service. Please update your service to use a safer KillMode=, such as 'mixed' or 'control-group'. Support for KillMode=none is deprecated and will eventually be removed.
+[    9.460203] systemd[1]: Queued start job for default target Graphical Interface.
+[    9.497552] systemd[1]: Created slice system-getty.slice.
+[  OK  ] Created slice system-getty.slice.
+[    9.505945] systemd[1]: Created slice system-modprobe.slice.
+[  OK  ] Created slice system-modprobe.slice.
+[    9.511646] systemd[1]: Created slice system-serial\x2dgetty.slice.
+[  OK  ] Created slice system-serial\x2dgetty.slice.
+[    9.515872] systemd[1]: Created slice system-systemd\x2dfsck.slice.
+[  OK  ] Created slice system-systemd\x2dfsck.slice.
+[    9.519500] systemd[1]: Created slice User and Session Slice.
+[  OK  ] Created slice User and Session Slice.
+[    9.525556] systemd[1]: Started Forward Password Requests to Wall Directory Watch.
+[  OK  ] Started Forward Password R…uests to Wall Directory Watch.
+[    9.538532] systemd[1]: Set up automount Arbitrary Executable File Formats File System Automount Point.
+[  OK  ] Set up automount Arbitrary…s File System Automount Point.
+[    9.542532] systemd[1]: Reached target Slices.
+[  OK  ] Reached target Slices.
+[    9.544196] systemd[1]: Reached target Swap.
+[  OK  ] Reached target Swap.
+[    9.571675] systemd[1]: Listening on Syslog Socket.
+[  OK  ] Listening on Syslog Socket.
+[    9.575177] systemd[1]: Listening on fsck to fsckd communication Socket.
+[  OK  ] Listening on fsck to fsckd communication Socket.
+[    9.580471] systemd[1]: Listening on initctl Compatibility Named Pipe.
+[  OK  ] Listening on initctl Compatibility Named Pipe.
+[    9.586244] systemd[1]: Listening on Journal Audit Socket.
+[  OK  ] Listening on Journal Audit Socket.
+[    9.590060] systemd[1]: Listening on Journal Socket (/dev/log).
+[  OK  ] Listening on Journal Socket (/dev/log).
+[    9.593889] systemd[1]: Listening on Journal Socket.
+[  OK  ] Listening on Journal Socket.
+[    9.600310] systemd[1]: Listening on udev Control Socket.
+[  OK  ] Listening on udev Control Socket.
+[    9.604034] systemd[1]: Listening on udev Kernel Socket.
+[  OK  ] Listening on udev Kernel Socket.
+[    9.609498] systemd[1]: Condition check resulted in Huge Pages File System being skipped.
+[    9.629910] systemd[1]: Mounting POSIX Message Queue File System...
+         Mounting POSIX Message Queue File System...
+[    9.651009] systemd[1]: Mounting RPC Pipe File System...
+         Mounting RPC Pipe File System...
+[    9.684027] systemd[1]: Mounting Kernel Debug File System...
+         Mounting Kernel Debug File System...
+[    9.709188] systemd[1]: Mounting Kernel Trace File System...
+         Mounting Kernel Trace File System...
+[    9.714539] systemd[1]: Condition check resulted in Kernel Module supporting RPCSEC_GSS being skipped.
+[    9.879920] systemd[1]: Starting Restore / save the current clock...
+         Starting Restore / save the current clock...
+[    9.927319] systemd[1]: Starting Set the console keyboard layout...
+         Starting Set the console keyboard layout...
+[    9.979436] systemd[1]: Starting Create list of static device nodes for the current kernel...
+         Starting Create list of st…odes for the current kernel...
+[   10.011775] systemd[1]: Starting Load Kernel Module configfs...
+         Starting Load Kernel Module configfs...
+[   10.067967] systemd[1]: Starting Load Kernel Module drm...
+         Starting Load Kernel Module drm...
+[   10.097111] systemd[1]: Starting Load Kernel Module fuse...
+         Starting Load Kernel Module fuse...
+[   10.158846] systemd[1]: Condition check resulted in Set Up Additional Binary Formats being skipped.
+[   10.161121] systemd[1]: Condition check resulted in File System Check on Root Device being skipped.
+[   10.299474] systemd[1]: Starting Journal Service...
+         Starting Journal Service...
+[   10.457452] systemd[1]: Starting Load Kernel Modules...
+         Starting Load Kernel Modules...
+[   10.540757] systemd[1]: Starting Remount Root and Kernel File Systems...
+         Starting Remount Root and Kernel File Systems...
+[   10.707275] fuse: init (API version 7.32)
+[   10.720417] systemd[1]: Starting Coldplug All udev Devices...
+         Starting Coldplug All udev Devices...
+[   11.033463] systemd[1]: Mounted POSIX Message Queue File System.
+[  OK  ] Mounted POSIX Message Queue File System.
+[   11.040176] systemd[1]: Mounted RPC Pipe File System.
+[  OK  ] Mounted RPC Pipe File System.
+[   11.068896] systemd[1]: Mounted Kernel Debug File System.
+[  OK  ] Mounted Kernel Debug File System.
+[   11.076675] systemd[1]: Mounted Kernel Trace File System.
+[  OK  ] Mounted Kernel Trace File System.
+[   11.159086] systemd[1]: Finished Restore / save the current clock.
+[  OK  ] Finished Restore / save the current clock.
+[   11.171019] cryptd: max_cpu_qlen set to 1000
+[   11.215348] systemd[1]: Finished Create list of static device nodes for the current kernel.
+[  OK  ] Finished Create list of st… nodes for the current kernel.
+[   11.229346] systemd[1]: modprobe@configfs.service: Succeeded.
+[   11.234925] systemd[1]: Finished Load Kernel Module configfs.
+[  OK  ] Finished Load Kernel Module configfs.
+[   11.245772] systemd[1]: modprobe@drm.service: Succeeded.
+[   11.249114] systemd[1]: Finished Load Kernel Module drm.
+[  OK  ] Finished Load Kernel Module drm.
+[   11.257078] systemd[1]: modprobe@fuse.service: Succeeded.
+[   11.261992] systemd[1]: Finished Load Kernel Module fuse.
+[  OK  ] Finished Load Kernel Module fuse.
+[   11.335318] systemd[1]: Mounting FUSE Control File System...
+         Mounting FUSE Control File System...
+[   11.357902] systemd[1]: Mounting Kernel Configuration File System...
+         Mounting Kernel Configuration File System...
+[   11.482188] i2c /dev entries driver
+[   11.511586] systemd[1]: Finished Load Kernel Modules.
+[  OK  ] Finished Load Kernel Modules.
+[   11.745880] systemd[1]: Starting Apply Kernel Variables...
+         Starting Apply Kernel Variables...
+[   11.801096] systemd[1]: Mounted FUSE Control File System.
+[  OK  ] Mounted FUSE Control File System.
+[   11.811143] systemd[1]: Mounted Kernel Configuration File System.
+[  OK  ] Mounted Kernel Configuration File System.
+[   12.051664] EXT4-fs (mmcblk0p2): re-mounted. Opts: (null)
+[   12.091604] systemd[1]: Finished Remount Root and Kernel File Systems.
+[  OK  ] Finished Remount Root and Kernel File Systems.
+[   12.105319] systemd[1]: Condition check resulted in Rebuild Hardware Database being skipped.
+[   12.107225] systemd[1]: Condition check resulted in Platform Persistent Storage Archival being skipped.
+[   12.120858] systemd[1]: Starting Load/Save Random Seed...
+         Starting Load/Save Random Seed...
+         Starting Create System Users...
+[  OK  ] Finished Apply Kernel Variables.
+[  OK  ] Finished Load/Save Random Seed.
+[  OK  ] Finished Create System Users.
+         Starting Create Static Device Nodes in /dev...
+[  OK  ] Finished Set the console keyboard layout.
+[  OK  ] Started Journal Service.
+         Starting Flush Journal to Persistent Storage...
+[  OK  ] Finished Create Static Device Nodes in /dev.
+[  OK  ] Reached target Local File Systems (Pre).
+         Starting Rule-based Manage…for Device Events and Files...
+[  OK  ] Finished Flush Journal to Persistent Storage.
+[  OK  ] Finished Coldplug All udev Devices.
+         Starting Helper to synchronize boot up for ifupdown...
+[  OK  ] Finished Helper to synchronize boot up for ifupdown.
+[  OK  ] Started Rule-based Manager for Device Events and Files.
+         Starting Show Plymouth Boot Screen...
+[  OK  ] Started Show Plymouth Boot Screen.
+[  OK  ] Started Forward Password R…s to Plymouth Directory Watch.
+[  OK  ] Reached target Local Encrypted Volumes.
+[  OK  ] Found device /dev/ttyAMA0.
+[  OK  ] Found device /dev/disk/by-partuuid/d97f5830-01.
+         Starting File System Check…isk/by-partuuid/d97f5830-01...
+usbnet: failed control transaction: request 0x2143 value 0xc index 0x0 length 0x0
+[  OK  ] Started File System Check Daemon to report status.
+[  OK  ] Finished File System Check…/disk/by-partuuid/d97f5830-01.
+         Mounting /boot...
+[  OK  ] Mounted /boot.
+[  OK  ] Reached target Local File Systems.
+         Starting Set console font and keymap...
+         Starting Raise network interfaces...
+         Starting Preprocess NFS configuration...
+         Starting Tell Plymouth To Write Out Runtime Data...
+         Starting Create Volatile Files and Directories...
+[  OK  ] Finished Tell Plymouth To Write Out Runtime Data.
+[  OK  ] Finished Set console font and keymap.
+[  OK  ] Finished Preprocess NFS configuration.
+[  OK  ] Reached target NFS client services.
+[  OK  ] Reached target Remote File Systems (Pre).
+[  OK  ] Reached target Remote File Systems.
+[  OK  ] Finished Create Volatile Files and Directories.
+         Starting Network Time Synchronization...
+         Starting Update UTMP about System Boot/Shutdown...
+[  OK  ] Finished Update UTMP about System Boot/Shutdown.
+[  OK  ] Started Network Time Synchronization.
+[  OK  ] Reached target System Initialization.
+[  OK  ] Started CUPS Scheduler.
+[  OK  ] Started Daily Cleanup of Temporary Directories.
+[  OK  ] Reached target Paths.
+[  OK  ] Reached target System Time Set.
+[  OK  ] Reached target System Time Synchronized.
+[  OK  ] Started Daily apt download activities.
+[  OK  ] Started Daily apt upgrade and clean activities.
+[  OK  ] Started Periodic ext4 Onli…ata Check for All Filesystems.
+[  OK  ] Started Discard unused blocks once a week.
+[  OK  ] Started Daily rotation of log files.
+[  OK  ] Started Daily man-db regeneration.
+[  OK  ] Reached target Timers.
+[  OK  ] Listening on Avahi mDNS/DNS-SD Stack Activation Socket.
+[  OK  ] Listening on CUPS Scheduler.
+[  OK  ] Listening on D-Bus System Message Bus Socket.
+[  OK  ] Listening on triggerhappy.socket.
+[  OK  ] Reached target Sockets.
+[  OK  ] Reached target Basic System.
+         Starting Avahi mDNS/DNS-SD Stack...
+[  OK  ] Started Regular background program processing daemon.
+[  OK  ] Started D-Bus System Message Bus.
+         Starting dphys-swapfile - …unt, and delete a swap file...
+         Starting Remove Stale Onli…t4 Metadata Check Snapshots...
+         Starting Check for glamor...
+         Starting Check for v3d driver...
+         Starting Configure Bluetooth Modems connected by UART...
+         Starting DHCP Client Daemon...
+         Starting LSB: Switch to on…nless shift key is pressed)...
+         Starting Regenerate SSH host keys...
+         Starting LSB: Resize the r…ilesystem to fill partition...
+         Starting LSB: rng-tools (Debian variant)...
+         Starting Check for Raspberry Pi EEPROM updates...
+         Starting System Logging Service...
+         Starting User Login Management...
+         Starting triggerhappy global hotkey daemon...
+         Starting Disk Manager...
+         Starting WPA supplicant...
+[  OK  ] Started triggerhappy global hotkey daemon.
+[  OK  ] Started System Logging Service.
+[  OK  ] Finished Check for glamor.
+[  OK  ] Finished Check for v3d driver.
+[  OK  ] Started DHCP Client Daemon.
+[  OK  ] Finished Raise network interfaces.
+[  OK  ] Finished Remove Stale Onli…ext4 Metadata Check Snapshots.
+[FAILED] Failed to start Check for Raspberry Pi EEPROM updates.
+See 'systemctl status rpi-eeprom-update.service' for details.
+
+usbnet: failed control transaction: request 0x2143 value 0xe index 0x0 length 0x0
+usbnet: failed control transaction: request 0x2143 value 0xe index 0x0 length 0x0
+[  OK  ] Started Avahi mDNS/DNS-SD Stack.
+[  OK  ] Started WPA supplicant.
+[  OK  ] Started LSB: Switch to ond…(unless shift key is pressed).
+[  OK  ] Reached target Network.
+[  OK  ] Listening on Load/Save RF …itch Status /dev/rfkill Watch.
+usbnet: failed control transaction: request 0x2143 value 0xe index 0x0 length 0x0
+usbnet: failed control transaction: request 0x2143 value 0xe index 0x0 length 0x0
+         Starting CUPS Scheduler...
+         Starting Authorization Manager...
+         Starting /etc/rc.local Compatibility...
+         Starting Permit User Sessions...
+[  OK  ] Started LSB: rng-tools (Debian variant).
+[  OK  ] Started User Login Management.
+usbnet: failed control transaction: request 0x2143 value 0xe index 0x0 length 0x0
+usbnet: failed control transaction: request 0x2143 value 0xe index 0x0 length 0x0
+My IP address is fec0::ee07:107d:8804:30c9 
+[  OK  ] Finished Permit User Sessions.
+[  OK  ] Started /etc/rc.local Compatibility.
+         Starting Light Display Manager...
+         Starting Hold until boot process finishes up...
+[  OK  ] Started CUPS Scheduler.
+[  OK  ] Started Make remote CUPS printers available locally.
+[  OK  ] Started Authorization Manager.
+usbnet: failed control transaction: request 0x2143 value 0xe index 0x0 length 0x0
+[  OK  ] Finished Hold until boot process finishes up.
+[  OK  ] Started LSB: Resize the ro… filesystem to fill partition.
+[FAILED] Failed to start Configure …ooth Modems connected by UART.
+
+Debian GNU/Linux 11 raspberrypi ttyAMA0
+
+raspberrypi login: 
+```
+
+
+So I did
+
+```
+sudo apt update
+sudo apt remove chromium-browser
+sudo apt upgrade # took ages! And kills network on reboot...
+sudo apt install build-essential cmake ninja-build libfontconfig1-dev libdbus-1-dev libfreetype6-dev libicu-dev libinput-dev libxkbcommon-dev libssl-dev libpng-dev libjpeg-dev libglib2.0-dev zlib1g-dev
+sudo apt install libgles2-mesa-dev libgbm-dev libdrm-dev
+sudo apt install libx11-dev libxcb1-dev libxext-dev libxi-dev libxcomposite-dev libxcursor-dev libxtst-dev libxrandr-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-util0-dev libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libxcb-xinput-dev
+sudo raspi-config # Advanced -> graphics driver -> change to GL (Full KMS).
+sudo apt install mesa-utils # maybe, maybe bad
+exit
+```
+
+Now when running configure, OpenGL is found:
+
+```
+-- Found OpenGL: /mnt/rasp-pi-rootfs/usr/lib/aarch64-linux-gnu/libOpenGL.so   
+-- Found WrapOpenGL: TRUE  
+-- Performing Test HAVE_GLESv2
+-- Performing Test HAVE_GLESv2 - Success
+-- Found GLESv2: /mnt/rasp-pi-rootfs/usr/include  
+```
+
+But realise now I need `qttools` installed. So `rm` all the `-host` dirs. Download the extra submodules:
+
+```
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qttools-everywhere-src-6.2.3.tar.xz
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtdeclarative-everywhere-src-6.2.3.tar.xz
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtvirtualkeyboard-everywhere-src-6.2.3.tar.xz
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtwebsockets-everywhere-src-6.2.3.tar.xz
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtwebview-everywhere-src-6.2.3.tar.xz
+```
+
+Un-tar them, mv to `-host` suffixes, then `cd qtbase-host` again. Do plain `./configure`, but this time to `cmake --build . --parallel` and `cmake --install .`. Now `cd` to `qttools-host` and run:
+
+```
+/usr/local/Qt-6.2.3/bin/qt-configure-module .
+cmake --build . --parallel
+cmake --install .
+```
+
+Finally:
+
+```
+cd ../qtbasebuild
+rm -R *
+../qtbase-cross/configure -nomake examples -nomake tests -qt-host-path /usr/local/Qt-6.2.3 -prefix /usr/local/qt6 -- -DCMAKE_TOOLCHAIN_FILE=../qtbase-cross/toolchain.cmake
+cmake --build . --parallel
+```
+
+Oh no, now all the `.so` library symlinks have incorrect paths. Fixed 3 of them manually, and... boom, `gcc-aarch64-linux-gnu` is [broken](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=100985). Sigh. Looks like the fixed version is in hirsute (21.04) and impish (21.10). Here we go again...
+
+
+```
+ssh root@128.199.97.210
+apt update
+apt upgrade
+apt install build-essential cmake ninja-build libfontconfig1-dev libdbus-1-dev libfreetype6-dev libicu-dev libinput-dev libxkbcommon-dev libssl-dev libpng-dev libjpeg-dev libglib2.0-dev
+apt install libgles2-mesa-dev libgbm-dev libdrm-dev
+apt install libx11-dev libxcb1-dev libxext-dev libxi-dev libxcomposite-dev libxcursor-dev libxtst-dev libxrandr-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-util0-dev libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libxcb-xinput-dev
+apt install unzip gcc make gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
+apt install qemu qemu-system-aarch64
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtbase-everywhere-src-6.2.3.tar.xz
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtshadertools-everywhere-src-6.2.3.tar.xz
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qttools-everywhere-src-6.2.3.tar.xz
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtdeclarative-everywhere-src-6.2.3.tar.xz
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtsvg-everywhere-src-6.2.3.tar.xz
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtvirtualkeyboard-everywhere-src-6.2.3.tar.xz
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtwebengine-everywhere-src-6.2.3.tar.xz
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtwebsockets-everywhere-src-6.2.3.tar.xz
+wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtwebview-everywhere-src-6.2.3.tar.xz
+wget https://downloads.raspberrypi.org/raspios_arm64/images/raspios_arm64-2022-01-28/2022-01-28-raspios-bullseye-arm64.zip
+
+
+unzip 2022-01-28-raspios-bullseye-arm64.zip
+mkdir /mnt/rasp-pi-rootfs
+fdisk -l 2022-01-28-raspios-bullseye-arm64.img # note "Start" of Linux partition. Let offset = Start * sector size.
+mount -o loop,offset=272629760 2022-01-28-raspios-bullseye-arm64.img /mnt/rasp-pi-rootfs
+mount -o offset=4194304,sizelimit=268435456 -t vfat 2022-01-28-raspios-bullseye-arm64.img /mnt/rasp-pi-rootfs/boot
+cp /mnt/rasp-pi-rootfs/boot/kernel8.img ./
+cp /mnt/rasp-pi-rootfs/boot/bcm2710-rpi-3-b-plus.dtb ./
+umount /mnt/rasp-pi-rootfs/boot
+umount /mnt/rasp-pi-rootfs
+qemu-img resize -f raw 2022-01-28-raspios-bullseye-arm64.img 4G
+qemu-system-aarch64 -m 1024 -M raspi3b -kernel kernel8.img -dtb bcm2710-rpi-3-b-plus.dtb -drive file=2022-01-28-raspios-bullseye-arm64.img,if=sd,format=raw -append "console=ttyAMA0 root=/dev/mmcblk0p2 rw rootwait rootfstype=ext4" -nographic -device usb-net,netdev=net0 -netdev user,id=net0,hostfwd=tcp::5555-:22
+
+
+sudo apt update
+sudo apt remove chromium-browser
+sudo apt autoremove
+ # sudo apt upgrade # took ages! And kills network on reboot... Fixed: copy the modified kernel file out of /boot again.
+sudo apt install build-essential cmake ninja-build libfontconfig1-dev libdbus-1-dev libfreetype6-dev libicu-dev libinput-dev libxkbcommon-dev libssl-dev libpng-dev libjpeg-dev libglib2.0-dev zlib1g-dev
+sudo apt install libgles2-mesa-dev libgbm-dev libdrm-dev
+sudo apt install libx11-dev libxcb1-dev libxext-dev libxi-dev libxcomposite-dev libxcursor-dev libxtst-dev libxrandr-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-util0-dev libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libxcb-xinput-dev
+sudo raspi-config # Advanced -> graphics driver -> change to GL (Full KMS). See https://forums.raspberrypi.com/viewtopic.php?t=317511
+ # sudo apt install mesa-utils # maybe, maybe bad
+exit
+
+
+ # Oh dear, qtwebview requires qtwebengine, which requires cmake 3.19 but impish only has 3.18.4.
+apt purge cmake
+wget https://github.com/Kitware/CMake/releases/download/v3.22.3/cmake-3.22.3.tar.gz
+tar xf cmake-3.22.3.tar.gz
+cd cmake
+./bootstrap # takes ages
+gmake -j$(nproc)
+gmake install
+cd ..
+
+tar xf qtbase-everywhere-src-6.2.3.tar.xz
+tar xf qtshadertools-everywhere-src-6.2.3.tar.xz
+tar xf qttools-everywhere-src-6.2.3.tar.xz 
+tar xf qtdeclarative-everywhere-src-6.2.3.tar.xz 
+tar xf qtwebengine-everywhere-src-6.2.3.tar.xz 
+tar xf qtwebsockets-everywhere-src-6.2.3.tar.xz 
+tar xf qtwebview-everywhere-src-6.2.3.tar.xz 
+tar xf qtsvg-everywhere-src-6.2.3.tar.xz
+tar xf qtvirtualkeyboard-everywhere-src-6.2.3.tar.xz 
+
+ # now the order really matters...
+ # on the other hand, --parallel seems not to matter
+cd qtbase-everywhere-src-6.2.3
+./configure
+cmake --build . --parallel
+cmake --install .
+cd ../qtshadertools-everywhere-src-6.2.3
+/usr/local/Qt-6.2.3/bin/qt-configure-module .
+cmake --build . --parallel
+cmake --install .
+cd ../qtdeclarative-everywhere-src-6.2.3
+/usr/local/Qt-6.2.3/bin/qt-configure-module .
+cmake --build . --parallel
+cmake --install .
+cd ../qtwebsockets-everywhere-src-6.2.3
+/usr/local/Qt-6.2.3/bin/qt-configure-module .
+cmake --build . --parallel
+cmake --install .
+cd ../qtwebengine-everywhere-src-6.2.3
+apt install nodejs python gperf bison flex libnss3-dev libxshmfence-dev
+apt install libxkbfile-dev # not checked by configure!
+apt install libfontconfig1-dev libfreetype6-dev libx11-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync0-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-xinerama0-dev libxkbcommon-dev libxkbcommon-x11-dev # still not enough...
+apt install libevent-dev minizip libminizip-dev libre2-dev libwebp-dev liblcms2-dev libxml2-dev libxslt-dev libavcodec-dev libavformat-dev libopus-dev libharfbuzz-dev libsnappy-dev # maybe makes no difference. Deleting and untar-ing again worked instead.
+apt purge libharfbuzz-dev # fails once you get to cross compiling!
+/usr/local/Qt-6.2.3/bin/qt-configure-module .
+cmake --build . --parallel # oh man, so many oom errors. 2GB per 8 processes: oom with 16GB RAM. Because DigitalOcean don't recommend swap on SSDs? Bit trigger-happy. Neither `--parallel 1` nor `-- -j 1` work, like they do on the Pi itself. Only solution so far is to keep re-starting. Maybe "echo 2 > /proc/sys/vm/overcommit_memory"? Bizarrely, "echo 1" is stable, "echo 2" is not... Still fragile though, so follow [this](https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-20-04) to create some swap.
+cmake --install .
+cd ../qtwebview-everywhere-src-6.2.3
+/usr/local/Qt-6.2.3/bin/qt-configure-module .
+cmake --build . --parallel
+cmake --install .
+cd ../qtsvg-everywhere-src-6.2.3
+/usr/local/Qt-6.2.3/bin/qt-configure-module .
+cmake --build . --parallel
+cmake --install .
+cd ../qtvirtualkeyboard-everywhere-src-6.2.3
+/usr/local/Qt-6.2.3/bin/qt-configure-module .
+cmake --build . --parallel
+cmake --install .
+cd ../qttools-everywhere-src-6.2.3
+/usr/local/Qt-6.2.3/bin/qt-configure-module .
+cmake --build . --parallel
+cmake --install .
+
+
+mv qtbase-everywhere-src-6.2.3 qtbase-everywhere-src-6.2.3-host
+tar xf qtbase-everywhere-src-6.2.3.tar.xz
+mv qtbase-everywhere-src-6.2.3 qtbase-cross
+mkdir qtbasebuild
+vi qtbase-cross/toolchain.cmake # as above
+mount -o loop,offset=272629760 2022-01-28-raspios-bullseye-arm64.img /mnt/rasp-pi-rootfs
+wget https://raw.githubusercontent.com/riscv/riscv-poky/master/scripts/sysroot-relativelinks.py # apparently fixQualifiedLibraryPaths is broken
+chmod +x sysroot-relativelinks.py 
+./sysroot-relativelinks.py /mnt/rasp-pi-rootfs
+cd qtbasebuild/
+../qtbase-cross/configure -nomake examples -nomake tests -qt-host-path /usr/local/Qt-6.2.3 -prefix /usr/local/qt6 -- -DCMAKE_TOOLCHAIN_FILE=../qtbase-cross/toolchain.cmake -DQT_BUILD_TOOLS_WHEN_CROSSCOMPILING=ON -DCMAKE_CXX_FLAGS="-Wl,--allow-shlib-undefined" # the last option prevents "/usr/lib/gcc-cross/aarch64-linux-gnu/11/../../../../aarch64-linux-gnu/bin/ld: /mnt/rasp-pi-rootfs/lib/aarch64-linux-gnu/libpthread.so.0: undefined reference to `__libc_dlopen_mode@GLIBC_PRIVATE'" compile errors
+cmake --build . --parallel
+cmake --install .
+
+# wow. it worked. Now the other submodules
+
+cd ..
+mv qtshadertools-everywhere-src-6.2.3 qtshadertools-everywhere-src-6.2.3-host
+tar xf qtshadertools-everywhere-src-6.2.3.tar.xz 
+mv qtshadertools-everywhere-src-6.2.3 qtshadertools-cross
+cd qtshadertools-cross/
+/mnt/rasp-pi-rootfs/usr/local/qt6/bin/qt-configure-module . -- -DCMAKE_CXX_FLAGS="-Wl,--allow-shlib-undefined"
+cmake --build . --parallel
+cmake --install .
+cd ..
+mv qtdeclarative-everywhere-src-6.2.3 qtdeclarative-everywhere-src-6.2.3-host
+tar xf qtdeclarative-everywhere-src-6.2.3.tar.xz 
+mv qtdeclarative-everywhere-src-6.2.3 qtdeclarative-cross
+cd qtdeclarative-cross/
+/mnt/rasp-pi-rootfs/usr/local/qt6/bin/qt-configure-module . -- -DCMAKE_CXX_FLAGS="-Wl,--allow-shlib-undefined"
+cmake --build . --parallel
+cmake --install .
+cd ..
+mv qtwebsockets-everywhere-src-6.2.3 qtwebsockets-everywhere-src-6.2.3-host
+tar xf qtwebsockets-everywhere-src-6.2.3.tar.xz 
+mv qtwebsockets-everywhere-src-6.2.3 qtwebsockets-cross
+cd qtwebsockets-cross/
+/mnt/rasp-pi-rootfs/usr/local/qt6/bin/qt-configure-module . -- -DCMAKE_CXX_FLAGS="-Wl,--allow-shlib-undefined"
+cmake --build . --parallel
+cmake --install .
+cd ..
+mv qtwebengine-everywhere-src-6.2.3 qtwebengine-everywhere-src-6.2.3-host
+tar xf qtwebengine-everywhere-src-6.2.3.tar.xz 
+mv qtwebengine-everywhere-src-6.2.3 qtwebengine-cross
+cd qtwebengine-cross/
+/mnt/rasp-pi-rootfs/usr/local/qt6/bin/qt-configure-module . -- -DCMAKE_CXX_FLAGS="-Wl,--allow-shlib-undefined"
+cmake --build . --parallel
+cmake --install .
+
+```
+
+[Clarification](https://forums.raspberrypi.com/viewtopic.php?t=260994) on the devilishly complex naming in `vc4-fkms-v3d`/`vc4-kms-v3d`
+
+**Stocktake**
+
+- qtbase
+	- [X] x86_64 compile (relatively easy)
+	- [X] arm64 compile
+	- [X] target compile (a few hours maybe)
+	- [X] cross-compile (runs hello-world-gui successfully)
+- qtwebview
+	- [X] x86_64 compile
+	- [X] arm64 compile (weirdly, requires `libre2-9` and `minizip` on target)
+	- [ ] target compile (exhausts 16GB SD card after ~6 hours)
+	- [ ] Cross-compile (builds but still have undefined reference / GLIBC_2.34 not found issues at runtime)
+- qtwebengine
+	- [X] x86_64 compile (about an hour, needs lots of cores, lots of RAM)
+	- [X] arm64 compile (need to restart after crash 1000 times, but builds in ~10 hours)
+	- [ ] target compile (not a chance)
+	- [ ] Cross-compile (can't find `fontconfig` during cross build)
+- Docker
+	- used for arm64 builds on macOS
+	- FROM scratch, COPY bullseye root extracted from img
+	- `exec it` then manually run build
+	- `docker cp` to extract build, then runs on target
+	- `docker commit` fails "no space left on device". Appears to be 10GB limit, so have no way to create image.
+
+
+Okay, Docker build going well. With every iteration the `Dockerfile` gets simpler, as I figure out what's not important. It's now kinda embarassingly simple, a mere shadow of the hours and hours and hours that went into it. Some key points:
+
+- Have abandoned the source submodules as a build strategy and am just building from the unified source.
+	- Submodules were useful for learning, but the dependencies between them (discovered organically, but actually documented well [here](https://www.tal.org/tutorials/building-qt-62-raspberry-pi)) are complicated and end up meaning you're building many submodules to get a few any way.
+	- Plus the build process is just far simpler - instead of building each submodule, you just exclude the ones you don't want by passing `-skip` to `configure`.
+	- The drawback is the source tarball is 650MB, but that's an easier pill to swallow than having to incrementally add big submodules instead.
+- Have switched to `debian:bullseye` as the base image for now. My cross-compiling experiments with Ubuntu demonstrated that having the same distro and version as the target is more important than having the Raspberry Pi OS itself. The `debian:bullseye` image happens to be official and easy to get. So if it works, it'll do just fine.
+	- Have some lingering doubts about whether this will result in optimal support for the Pi's GPU, but at this stage I'm not experiencing any issues.
+- Have dropped `qtwebengine` from the build. It adds significant complexity to the process, which actually turns out to be fairly straight-forward without it. There was some doubt about whether `qtwebview` had dependencies on `qtwebengine`, but I've proven by way of a running GUI on the Raspberry Pi 3B+ plus 7" Touchscreen, in X, VNC and bare console forms, that `qtwebengine` is not required.
+	- Still including `qtwebengine`'s dependencies, because the impact is fairly negligable and removing them could have unintended consequences.
+	- TODO: I think I can substitute this with `balenalib/%%BALENA_MACHINE_NAME%%-debian:bullseye`. I don't know the implications. This is one of the investigations necessary to balena-ify.
+- If it turns out there are no runtime issues, this "native compiling in Docker on arm64" could turn out to be far more worthwhile than promoting cross-compilation. It can be done on the Desktop with a Mac M1, and in the cloud on balena's ARM builders. You can't just spin up 16 x86 cores and 128GB of RAM in the cloud and go to town on the build, but in both cases you're still looking at a long build (in ideal circumstances, maybe 30 mins a on maxed out x86 and 45 mins on a M1 Pro - in non-ideal circumstance they're both going to take hours), so the simplicity of native and of local building is probably worth it.
+	- This is not true if `qtwebengine` is added. At that point, more cores and buckets of RAM make a world of difference.
+- Biggest issue at the moment is Docker running out of disk space! The more I use Docker the more I realise its slick vaneer covers a rollicking mess below. Still trying to figure out the best hoops to convince Docker to be a little more accommodating of Qt's girth.
+
+
+Other [Qt 6.2 Configure Options](https://doc.qt.io/qt-6/configure-linux-device.html) to explore:
+
+- `-optimize-size` - seems to be optimizing release builds in terms of resulting binaries size (by sacrificing build time)
+- `-static` - see [At last, let's build Qt statically](https://decovar.dev/blog/2018/02/17/build-qt-statically/).
+	- Update: requires newer version of CMake. Temporarily in the too hard basket.
+- 
+
+
+
+Reached a stable place with Docker. Now consists of a multi-stage build, that can start from `balenalib/raspberrypi3-64-debian:buster-build`, that can build Qt from source (excluding `qtwebwengine`), and finish with an *image* that can build Qt projects. Needs 70+GB and 45 mins to build, but resulting image is <2GB. Is stable because the path to balena-fication is now low risk, however, does not appear to be a useful way to develop. So will shelf in a good place, do development using more direct means, and pick back up at the end.
+
+For reference, commands to build and use the image:
+
+```
+$ docker build .
+$ docker image ls
+$ docker run -it <image ID> /bin/bash
+$ docker cp src <container ID>:/src
+```
+
+So ideas on how to distribute the image:
+
+```
+$ docker save <image> | bzip2 | pv | ssh user@host sudo docker load
+```
+
+Note:
+
+- get <image ID> from the output of `docker image ls` and be wary that Docker's "Created" column is buggy.
+- run the `docker cp` command in separate session, because the `docker run` session will be in the container.
+- get <container ID> from the prompt that appears in the `docker run` session
+
+On the development front, after much hand-wringing, am satisfied with this workflow:
+
+- extract Qt install from Docker image and copy to RPi
+- develop on Desktop in Qt Creator
+- sync (rsync perhaps) project source to Pi
+	- This will do fine, run from the `winot-gui` directory on Desktop: `rsync -a --filter='.- ../.gitignore' src/ pi@raspberrypi.local:~/Programming/winot/winot-gui/src-cmdline-build`
+	- Note there's no automatic delete, because the target may have generated files it wants to keep.
+	- [Ref](https://stackoverflow.com/a/63438492/3697870)
+- build and test on target over ssh
+
+Still can't understand why I'm the last hold-out in the world from doing dev with Docker. Though [this comment](https://stackoverflow.com/questions/27068596/how-to-include-files-outside-of-dockers-build-context#comment83524633_27068596) brings me some peace.
+
