@@ -11,7 +11,6 @@ Window { //only for Designer
     title: qsTr("PutScreen")
 */
 Item {
-
     signal sigHome
     property int step: 0
 
@@ -120,8 +119,8 @@ Item {
         id: webView
         x: 5
         y: 279
-        width: 470
-        height: 517
+        width: onTarget ? 517 : 470 //not sure why this is necessary, but it is.
+        height: onTarget ? 470 : 517
 
         visible: false
 

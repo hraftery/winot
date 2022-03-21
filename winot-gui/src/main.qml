@@ -2,8 +2,11 @@ import QtQuick
 import QtQuick.Controls
 
 Window {
-    width: 480
-    height: 800
+    property bool onTarget: true //set to true if we're running on the Pi, false for desktop.
+
+    id: root
+    width: onTarget ? 800 : 480
+    height: onTarget ? 480 : 800
     visible: true
     color: "#000000"
     title: qsTr("Winot")
@@ -82,8 +85,19 @@ Window {
         onCurrentItemChanged: {
             currentItem.forceActiveFocus()
             if(currentItem.objectName == "HomeScreen") {
-                //TODO: turn off illumination
+                //TODO: turn off illumination. Update: honestly can't remember what this means. Display sleep perhaps?
             }
+        }
+    }
+
+    Binding {
+        target: stack
+        property: "transform"
+        when: onTarget
+        value: Rotation {
+            origin.x: root.height/2
+            origin.y: root.height/2 //not a typo, works out right.
+            angle: -90
         }
     }
 }

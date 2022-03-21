@@ -109,8 +109,8 @@ Item {
         id: webView
         x: 5
         y: tableView.y + tableView.contentHeight + 5
-        width: 470
-        height: 795 - y
+        width: onTarget ? 795 - y : 470 //not sure why this is necessary, but it is.
+        height: onTarget ? 470 : 795 - y
 
         visible: currentSelection >= 0
 

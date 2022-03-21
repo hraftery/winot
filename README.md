@@ -1463,10 +1463,37 @@ On the development front, after much hand-wringing, am satisfied with this workf
 - extract Qt install from Docker image and copy to RPi
 - develop on Desktop in Qt Creator
 - sync (rsync perhaps) project source to Pi
-	- This will do fine, run from the `winot-gui` directory on Desktop: `rsync -a --filter='.- ../.gitignore' src/ pi@raspberrypi.local:~/Programming/winot/winot-gui/src-cmdline-build`
+	- This will do fine, run from the `winot-gui` directory on Desktop: `rsync -a --filter=".- ${HOME}/.gitignore" --filter='.- ../.gitignore' src/ pi@raspberrypi.local:~/Programming/winot/winot-gui/src-cmdline-build`
 	- Note there's no automatic delete, because the target may have generated files it wants to keep.
 	- [Ref](https://stackoverflow.com/a/63438492/3697870)
 - build and test on target over ssh
 
 Still can't understand why I'm the last hold-out in the world from doing dev with Docker. Though [this comment](https://stackoverflow.com/questions/27068596/how-to-include-files-outside-of-dockers-build-context#comment83524633_27068596) brings me some peace.
+
+Okay, back to development. GUI is looking good on the desktop, let's clean it up on device.
+
+First issue is rotation. Flat out doesn't work and it's a nasty thing to search for because it depends on:
+
+- Raspberry Pi 3 or Raspberry Pi 4 (the later uses a different display driver)
+- Raspberry Pi OS Bullseye or Buster (it all changed in Bullseye)
+- Date of advice (after Bullseye release, fixes were made around end of 2021 / start of 2022).
+- HDMI or DSI
+- Touch or just display (need to be rotated individually)
+- 180° (inverted) compared to 90° (portrait). Eg. the former can be done with `lcd_rotate=2` but `lcd_rotate=1` doesn't result in the latter.
+- Default window manager or different - many solutions are window manager specific.
+
+Only reliable way to rotate screen so far is to use Screen Configuration tool in the GUI. It rotates the display, but not the touch. Tracked down its behaviour to being that of `arandr` which is a GUI wrapper for `xrandr` that persists settings by [writing scripts](https://github.com/pimoroni/hyperpixel4/issues/53#issuecomment-567006223) such as `/usr/share/dispsetup.sh` to be executed on boot. Alas, `xrandr` is X only.
+
+So running out of hope for a lower level method, that would regardless of the user space application. Maybe worth investigating whether `eglfs` itself can rotate. If all else fails, will do it right at the top level in Qt itself, but that would suck.
+
+Looks like setting the `QT_QPA_EGLFS_ROTATION=90` environment variable might be a winner. Bummer, it definitely *shifts* the display, but doesn't rotate it. Ah: "This variable does not apply to OpenGL-based windows, including Qt Quick.".
+
+The trail runs cold in [2017](https://forum.qt.io/topic/76386/qml-rotation-for-scene-and-mouse).
+
+Okay, by sheer determination (aka. trial and error), I have a working solution based on a QML transform. Specifically:
+
+- declare `property bool onTarget: true` in root `Window` component so rotation can be turned off globally for use on desktop, and anticipating that this might not be the only setting that needs to be applied globally for switching between target and desktop.
+- flip the root `Window`'s `width` and `height` based on `onTarget`.
+- `Window` itself doesn't have a `transform` property, so apply a `Binding` to the `Stack` component, which is the only visual element in the `Window`. Use the `Binding` with a `when` of `onTarget` to set `transform` to `Rotation { origin.x: root.height/2; origin.y: root.height/2; angle: -90 }`. Note the funny origin to accommodate the coordinate space transform.
+- Everything automagically works, including touch, except `Webview`. Oddly, all `Webview`'s have to have their `width` and `height` swapped too.
 
