@@ -32,18 +32,16 @@ Item {
         font.family: "Arial"
     }
 */
-    Button {
+    CommonButton {
         id: btnConfirm
-        x: 280
-        y: 5
-        width: 190
-        height: 42
+        x: 468-width
+        y: 8
+        width: 208
+        height: 35
 
         enabled: currentSelection >= 0
 
         text: qsTr("Confirm Selection")
-        font.pixelSize: 20
-        font.family: "Arial"
 
         onClicked: {
             sigHome()

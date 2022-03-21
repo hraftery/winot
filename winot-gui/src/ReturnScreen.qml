@@ -33,18 +33,16 @@ Item {
         font.family: "Arial"
     }
 */
-    Button {
+    CommonButton {
         id: btnConfirm
-        x: 300
-        y: 5
-        width: 170
-        height: 42
+        x: 468-width
+        y: 8
+        width: 182
+        height: 35
 
         enabled: currentSelection >= 0
 
         text: qsTr("Confirm Return")
-        font.pixelSize: 20
-        font.family: "Arial"
 
         onClicked: {
             //TODO: Change from "in use" to bin # from CellarTracker

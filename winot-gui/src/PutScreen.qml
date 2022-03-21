@@ -77,7 +77,7 @@ Item {
 
     TextField {
         id: txtIdentifier
-        x: 67
+        x: 77
         y: 233
         width: 189
         height: 32
@@ -90,15 +90,14 @@ Item {
         onTextChanged: step = 1
     }
 
-    Button {
+    CommonButton {
         id: btnSubmit
-        x: 280
-        y: 225
-        width: 129
-        height: 48
+        x: 290
+        y: 229
+        width: 110
+        height: 40
         text: qsTr("Submit")
-        font.pixelSize: 22
-        font.family: "Arial"
+        enabled: txtIdentifier.text
 
         onClicked: {
             step = 2
