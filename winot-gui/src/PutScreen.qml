@@ -22,6 +22,22 @@ Item {
         webView.visible = false
     }
 
+    function getInstructionsText() {
+        var step1 = "1. Scan or id the new wine bottle.<br />"
+        var step2 = "2. Click Submit to add to CellarTracker.<br />"
+        var step3 = "3. Complete the entry using bin #<br />"
+        var step4 = "4. Place the bottle in the illuminated slot."
+        var highlightOn  = "<b><font color=\"#A6C798\">"
+        var highlightOff = "</font></b>"
+        switch(step) {
+            case 0: return highlightOn + step1 + highlightOff + step2 + step3 + step4
+            case 1: return step1 + highlightOn + step2 + highlightOff + step3 + step4
+            case 2: return step1 + step2 + highlightOn + step3 + highlightOff + step4
+            case 3: return step1 + step2 + step3 + highlightOn + step4 + highlightOff
+        }
+        //return "1. Scan or id the new wine bottle.\n2. Click Submit to add to CellarTracker.\n3. Complete the entry using bin #\n4. Place the bottle in the illuminated slot."
+    }
+
     HomeButton {
     }
 
@@ -30,22 +46,25 @@ Item {
         y: 70
         color: "#ffffff"
         lineHeight: 1.4
-        text: "1. Scan or id the new wine bottle.\n2. Click Submit to add to CellarTracker.\n3. Complete the entry using bin #\n4. Place the bottle in the illuminated slot."
+        text: getInstructionsText()
         font.pixelSize: 22
         font.family: "Arial"
     }
 
     Text {
         id: lblBin
-        x: 369
+        x: step == 2 ? 392 : 369
         y: 140
-        color: "#ffffff"
-        text: "unknown"
+        color: step == 2 ? "#A6C798" : "#ffffff"
+        text: "5." //TODO: obviously needs to be hooked up to next available slot
         font.pixelSize: 22
         font.family: "Arial"
         font.bold: true
     }
 
+/* The ⮕ character doesn't render on RPi and fixing Unicode issues on Linux is a well-established rabbit hole.
+ * So will kill two birds with one stone and switch to a more modern/professional method by changing the font
+ * of the current step instead.
     Text {
         id: lblStepMarker
         x: 18
@@ -54,6 +73,7 @@ Item {
         text: "⮕"
         font.pixelSize: 26
     }
+*/
 
     TextField {
         id: txtIdentifier
@@ -87,6 +107,16 @@ Item {
         }
     }
 
+    //TODO: store login cookie. Some guidance:
+    // - find the relevant cookies
+    //   - see Cookies for the site (careful, multiple URLs - check www. or the one that has the most)
+    //   - the relevant cookies are probably *not* those listed here: https://support.stackpath.com/hc/en-us/articles/360037692692-Learn-About-WAF-Cookies
+    //   - may just be "username" and "passwordHash" (from memory - names might be different)
+    // - then create and apply a CookieJar. Four useful, if insufficient, references to piece together:
+    //   - https://stackoverflow.com/a/5407338/3697870
+    //   - https://forum.qt.io/topic/8305/qwebview-cookies/5
+    //   - https://doc.qt.io/qt-5/qnetworkaccessmanager.html#setCookieJar
+    //   - https://stackoverflow.com/questions/31191545/stay-logged-in-cookies-with-qt-webview
     WebView {
         id: webView
         x: 5
@@ -98,6 +128,12 @@ Item {
 
         //Anything to get us the mobile version of the site.
         httpUserAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1"
+
+        onUrlChanged: {
+            console.log(url)
+            if(url.toString().includes("added=1")) //the url changes to this when the user submits a new wine
+                step = 3
+        }
     }
 
     /*
