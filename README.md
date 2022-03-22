@@ -1495,5 +1495,29 @@ Okay, by sheer determination (aka. trial and error), I have a working solution b
 - declare `property bool onTarget: true` in root `Window` component so rotation can be turned off globally for use on desktop, and anticipating that this might not be the only setting that needs to be applied globally for switching between target and desktop.
 - flip the root `Window`'s `width` and `height` based on `onTarget`.
 - `Window` itself doesn't have a `transform` property, so apply a `Binding` to the `Stack` component, which is the only visual element in the `Window`. Use the `Binding` with a `when` of `onTarget` to set `transform` to `Rotation { origin.x: root.height/2; origin.y: root.height/2; angle: -90 }`. Note the funny origin to accommodate the coordinate space transform.
-- Everything automagically works, including touch, except `Webview`. Oddly, all `Webview`'s have to have their `width` and `height` swapped too.
+- Everything automagically works, including touch. Except `Webview`. Oddly, all `Webview`'s have to have their `width` and `height` swapped too.
 
+
+Set the [barely documented](https://doc.qt.io/qt-6/inputs-linux-device.html) `QT_QPA_EGLFS_HIDECURSOR=1` environment variable to hide the cursor.
+
+Okay, am in a good place with the code, running natively on target. Back to running within Docker. Quick experiment installing docker on native and just running the compiled binary - as expected, shared libraries are going to be a big hassle. Two options:
+
+1. Run the binary from the same image it is built.
+	- Pro: low risk - all the bits already exist.
+	- Con: image is *chunky*. At the end of the day, what's 1.4GB between friends?
+2. Build a static binary.
+	- Pro: [finally](https://doc.qt.io/qt-6/linux-deployment.html#static-linking) some confirmation - "safest and easiest way to distribute on Unix".
+	- Con: building Qt itself statically is currently in too hard basket.
+		- Update: Qt build went fine (requires building CMake from source, but have already crossed bigger bridges than that), all looks in order. But alas, the build of the Qt project fails with the following error, and the trial runs cold. Back in the too hard basket.
+
+```
+/usr/bin/ld: /qt/./qml/QtQuick/Controls/Basic/objects-Release/qtquickcontrols2basicstyleplugin_qmlcache/.rcc/qmlcache/qtquickcontrols2basicstyleplugin_qmlcache_loader.cpp.o:(.data.rel.ro._ZN21QmlCacheGeneratedCode65_qt_0x2d_project_0x2e_org_imports_QtQuick_Controls_Basic_Dial_qmlL4unitE+0x0): undefined reference to `QmlCacheGeneratedCode::_qt_0x2d_project_0x2e_org_imports_QtQuick_Controls_Basic_Dial_qml::qmlData'
+```
+
+Method #1 works fine, so will push ahead. Notes on running:
+
+- Run docker: `docker run -it --priviledged --env UDEV=1 955f57a0613c bash`
+	- Only `/dev/dri/card0` is required for the display, and the contents of `/dev/input/` should be enough for touch. Alas, touch still wont work unless `UDEV=1`. Which requires `--priviledged`. Yep, for a kernel-supported touch panel, 'cause Docker.
+- Copy in src: `docker cp src 83695ec69017:/src`
+- Build src: `cd src; qmake; make`
+- Run: `QT_QPA_EGLFS_HIDECURSOR=1 ./winot-gui -platform eglfs`

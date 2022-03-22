@@ -12,3 +12,15 @@ services:
       - SYS_RAWIO
     ports:
       - "80:80" # temporary to make it easier to test
+  winot-gui:
+    build: ./winot-gui
+    environment:
+      - UDEV=1
+    privileged: true
+    restart: always
+#    devices:
+#      - "/dev/dri/card0:/dev/dri/card0"       # This is sufficient for the display.
+#      - "/dev/input/event0:/dev/input/event0" # Alas, none of these are sufficient for the touch,
+#      - "/dev/input/event1:/dev/input/event1" # so we resort to privileged + UDEV=1 instead.
+#      - "/dev/input/mice:/dev/input/mice"     # Oddly, that works. Ain't Docker fun?
+#      - "/dev/input/mouse0:/dev/input/mouse0"

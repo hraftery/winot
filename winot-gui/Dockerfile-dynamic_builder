@@ -1,0 +1,120 @@
+###
+# Build a container that can build Qt applications.
+###
+
+# WARNING: while the final size of this image is <2GB thanks to multi-stage builds,
+#          it does require some 70+GB to get there. It's highly likely that running
+#          this build on Desktop will fail after quite some time with "no space on
+#          device", unless the default docker disk image size is increased in Docker
+#          preferences, and/or "docker system prune" is run first.
+
+
+###
+# Global build-time variables, Docker style
+###
+
+# Remember to re-ARG this in each container that uses it, or enjoy silently failing half an hour
+# into execution. For more on this strange behaviour, see https://github.com/moby/moby/issues/37345
+ARG QT_LOC=/qt
+
+
+###
+# Stage 0: build Qt
+###
+
+# Start from same distribution as Raspberry Pi OS 2022-01-28
+FROM debian:bullseye AS prereqs
+# Turns out this works just fine too:
+#FROM balenalib/raspberrypi3-64-debian:bullseye-build AS prereqs
+
+
+###
+# Install pre-requisites.
+###
+
+# Finding a working set is laborious, and pruning it even more so. Since removing packages
+# can have subtle effects, both during the build and in later use, the general strategy is to
+# leave packages in if they proved useful during a build, and control built Qt functionality
+# with configure options. That means not all these are required, particularly with
+# qtwebengine skipped. On the other hand, this set is also not exhaustive. In particular,
+# without multimedia packages like gstreamer and asound not all functionality will be available.
+
+# Start with the essentials in a layer by themselves.
+RUN apt-get update && apt-get install -y \
+# Basic build tools
+    build-essential cmake ninja-build \
+# Minimum requirements
+    libfontconfig1-dev libdbus-1-dev libfreetype6-dev libicu-dev libinput-dev libxkbcommon-dev libsqlite3-dev libssl-dev libpng-dev libjpeg-dev libglib2.0-dev
+
+# Then add the optionals, since they may change.
+RUN apt-get install -y \
+# Extra build tools for qtwebengine
+    nodejs python gperf bison flex \ 
+# OpenGLES stuff for painting to the screen with or without a window manager
+    libgles2-mesa-dev libgbm-dev libdrm-dev \
+# Extra GUI stuff
+    zlib1g-dev libx11-dev libxcb1-dev libxext-dev libxi-dev libxcomposite-dev libxcursor-dev libxtst-dev libxrandr-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-util0-dev libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-x11-dev libxkbfile-dev libxcb-xinput-dev \
+# Other stuff that proved worthwhile
+    libevent-dev minizip libminizip-dev libre2-dev libwebp-dev liblcms2-dev libxml2-dev libxslt-dev libavcodec-dev libavformat-dev libopus-dev libharfbuzz-dev libsnappy-dev libnss3-dev libxshmfence-dev 
+
+
+###
+# Stage 1: build Qt
+###
+
+FROM prereqs as build
+# Pre-requisites installed. Lets add the Qt source.
+
+# Note: only version 6.2.3 has been tested
+# Example result: QT_FILENAME=qt-everywhere-src-6.2.3.tar.xz
+ENV QT_SRC_NAME=qt-everywhere-src
+ENV QT_MAJOR=6.2
+ENV QT_VERSION=${QT_MAJOR}.3 
+ENV QT_BASENAME=${QT_SRC_NAME}-${QT_VERSION}
+ENV QT_FILENAME=${QT_BASENAME}.tar.xz
+
+#RUN wget https://download.qt.io/official_releases/qt/${QT_MAJOR}/${QT_VERSION}/single/${QT_FILENAME} && \
+#    tar xf ${QT_FILENAME}
+# To prevent rolling the dice with the Internet every new build, put the src tarball in the
+# context and use the ADD below instead of the RUN above. For the production image, avoid
+# storing a ~630MB file and rely on the URL method above. See this face-slapper for why I
+# can't just use ADD in both scenarios: https://stackoverflow.com/a/47503262/3697870
+ADD ${QT_FILENAME} /
+
+WORKDIR /${QT_BASENAME}
+
+
+###
+# Source ready, time to build it.
+###
+
+ARG QT_LOC
+
+RUN ./configure -prefix $QT_LOC -skip qtwebengine
+# Next step takes about 45 mins on a M1 Pro.
+RUN cmake --build . --parallel
+RUN cmake --install .
+
+
+###
+# Stage 2: done building, now capture the results
+###
+
+# Turns out we need nearly as many libraries to build a project as we did to
+# build the Qt source, so instead of introducing risk by figuring out a subset,
+# just bring the same set in.
+FROM prereqs
+
+ARG QT_LOC
+
+COPY --from=build $QT_LOC $QT_LOC
+
+# Qt doesn't typically mess with the PATH, so users can run multiple versions.
+# In our case we explicitly want command line use of what we just installed,
+# so we put cmake and friends on the path, as per https://doc.qt.io/qt-6/linux-building.html
+# Note this doesn't include uic and others, which are in $QT_LOC/libexec instead.
+ENV PATH="$QT_LOC/bin:$PATH"
+
+###
+# Ready for use! Just add your source and build commands.
+###
