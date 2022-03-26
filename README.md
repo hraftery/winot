@@ -1521,3 +1521,156 @@ Method #1 works fine, so will push ahead. Notes on running:
 - Copy in src: `docker cp src 83695ec69017:/src`
 - Build src: `cd src; qmake; make`
 - Run: `QT_QPA_EGLFS_HIDECURSOR=1 ./winot-gui -platform eglfs`
+
+Boom! Packaged it all up in a Dockerfile, including building and running the project source, sent to to the balena builders, and woke in the morning to a functional device! Touchscreen looks good (albeit upside down - known issue) although WebView doesn't load...
+
+Looked into WebView issue. Looks like the old "No WebView plug-in found!" issue, which I previously fixed by setting `QT_DEBUG_PLUGINS=1` watching the stdout when the WebView should appear. From memory that revealed a missing library, which was relatively easy to fix. Can't remember the details though, and appears to be the only issue amongst 70 trillion that I fixed, that I didn't document...
+
+Bigger issues though - I set `QT_DEBUG_PLUGINS=1` and re-pushed. It takes 10 minutes just to load the image from cache, but when it ran next... touch no longer worked! What changed? Maybe:
+
+- The addition of `QT_DEBUG_PLUGINS=1`.
+- Launch on to an already running blank balenaOS vs pushing a new version.
+- Flipping the GUI up the right way.
+- Disabling `led-strip-driver` (which is in its own world of pain - a restart spin because "ws2811_init failed with code -3 (Hardware revision is not supported)".
+- Putting the case on (bumping cable).
+
+Have tried toggling each of these potential confounding variables, to no avail.
+
+So back to first principles: oh dear, I'm sure RPiOS was using `edt-ft5x06` as the driver. Turns out balenaOS has `raspberrypi-ts` instead... but that's actually correct! That's the one in the kernel, and Raspberry Pi switched to it back in rpi-5.0.y (which I think corresponds to kernel version 5.0, which was ages ago. RPiOS is 5.10. Certainly the [confirmation](https://github.com/raspberrypi/linux/issues/3412#issuecomment-576193691) was a couple of years ago. So maybe `edt-ft5x06` was never responsible in the first place. But is `raspberrypi-ts` sufficient? Certainly doesn't seem to be - `/dev/input` only have `event0` and I can't get any touch action. But what changed??? Surely it's a bumped cable / power on issue. Nope, still works if I flip back to RPiOS, and no change if I reboot / restart containers / power cycle / re-push / etc.
+
+Basically [this issue](https://forums.raspberrypi.com/viewtopic.php?f=28&t=303680). No solution.
+
+Went deeeep on balenaOS. Eventually found:
+
+- balenaOS 2.65.0+rev1 : no screen
+- balenaOS 2.80.3+rev1 : happy days
+- balenaOS 2.94.4 : false sense of security
+
+And added kernel version table to Sheets.
+
+So 2.80.3+rev1 seems to be going good. Right up until I rotate the display +90 instead of -90! Suddenly no touch! Couldn't possibly be software - why would the direction matter.
+
+Except... oh dear, just found `cat /dev/input/event0` produces output with *either* rotation! But in one case they're not being registered. WTF??
+
+Hmm, `evtest` (installed in winot_gui container) even reports correct coordinates.
+
+Similar issues [here](https://forum.qt.io/topic/78340/screen-rotation-does-not-handle-mouse-clicks-properly/3). No solution.
+
+Okay `rev9` is a clean build. `rev10` is `CMD /bin/bash`.
+
+OMG. The "false sense of security” turns out to simply be a bad balena builder build.
+
+- winot release [0.0.0-rev7](https://dashboard.balena-cloud.com/fleets/1918105/releases/2112182) was built largely from cache. The only code change was to rotate the GUI 90° instead of -90°, way up in the painting layer of QML. Build duration: 12:52.
+  - Behaviour: no touch response. But `evtest` running in the gui container reports correct coordinates when touching the screen! Otherwise identical as far as I can see to rev9.
+- winot release [0.0.0-rev9](https://dashboard.balena-cloud.com/fleets/1918105/releases/2112220) was built with cache disabled (`-c`), but otherwise **no** code change. Build duration: 37:14.
+  - Behaviour: sweet as a button. No issues.
+
+Back when I was on 2.94.4 the cache build *seemed* weird - a strange combination of re-build and cache pull and new layer generation. But I’m new and there was 70 zillion other potential causes, so I had to eliminate them first. Now looking back at the build log stored on the cloud, it doesn’t seem unusual, so I’m not sure what I saw.
+
+So I don’t know what went wrong, but everything is hunky-dory now. I suggest that I can replace "false sense of security” in the 2.94.4 row above with "happy days", but given I’m now on 2.80.3+rev1, and this little detour has taken me about 12 hours, I’m not all that motivated to test it to make sure.
+
+> if your app runs in newer balenaOS version where we have `vc4-kms-v3d` as default, your app might not work
+> 
+> you can enforce `vc4-fkms-v3d` by using a fleet/dev config variable, `BALENA_HOST_CONFIG_dtoverlay=vc4-fkms-v3d` 
+> 
+> you can add it to your app's `balena.yml`
+
+Great summary, thank you @rahul-thakoor . Two clarifications:
+
+- I’m still unsure which is the “right” overlay for RPi3 - things seem to have changed in the last 6 months or so, and there’s [opinions](https://forums.raspberrypi.com/viewtopic.php?p=1866277#p1866277) and [suggestions](http://psychtoolbox.org/docs/RaspberryPiSetup) that `vc4-kms-v3d` is now preferred for the RPi3, but it’s pretty [wild](https://github.com/raspberrypi/linux/issues/4516) out there.
+
+Why the build went bad is still a open sore, but now I can separate it from driver/overlay issues, progress is much easier.
+
+> yeah `vc4-kms-v3d` is supposed to be the recommended one but it is not on par with the firmware driver which has more features. but kms is using open source drivers and the rpi foundation is pushing towards that, same with the camera library stack
+> 
+> fwiw, on RPiOS bullseye, `vc4-kms-v3d` is the default
+
+Okay, on to the next issue: [No WebView plug-in found!](https://forum.qt.io/topic/135256/no-webview-plug-in-found-with-qt-6-2-3-on-linux).
+
+Took the advice from that thread and kicked off a build including webengine. Sure enough, it crashed, no doubt due to OOM. So have kicked off another one that just retries 15 times. Has been running for several hours (gets really slow when near OOM) and making incremental progress, but looks like 15 times wont cut it. So can either brute force it:
+
+```
+for retry in {1..200}; do
+	cmake --build . --parallel && break
+done
+```
+
+Or back off and go slower:
+
+```
+cmake --build . --parallel || CMAKE_BUILD_PARALLEL_LEVEL=4 cmake --build . --parallel
+```
+
+Haven't tried either yet - it's a many hour process. In the meantime, managed to pull the compiled Qt tarball from the Macbook, cp it to the balena container, and confirm that yes indeed, having webengine fixes things. Perhaps I should just include the tarball in my context and abandon hope of building in the cloud?
+
+Although note that because the balena container runs as root (there are no other users), and webengine thinks that's a bit much to be running a browser, you get this error: 
+
+```
+ERROR:zygote_host_impl_linux.cc(89)] Running as root without --no-sandbox is not supported. See https://crbug.com/638180.
+```
+
+The link is useless, but the error is self-explanatory. Unfortunately, I can't run `winot-gui` as non-root because it doesn't have permission to access `/dev/dri/core0` (which seems wrong), but fortunately passing the `--no-sandbox` flag does work. I'd prefer to run as non-root, but it looks like balena has [no](https://forums.balena.io/t/running-as-root-without-no-sandbox-is-not-supported/18845) [answer](https://forums.balena.io/t/create-a-non-root-user-on-x11-window-manager/63131).
+
+So current avenues of pursuit:
+
+- WebView without WebEngine
+	- ABANDONED. Assumed not possible on Linux.
+- Build WebEngine
+	- Brute force.
+		- TRIAL UNDERWAY
+	- Back off.
+		- NEXT TO TRIAL
+	- Tarball in context + `ADD`.
+		- Low risk backup plan.
+- WebView working on device.
+	- CONFIRMED with MacBook build of webengine.
+- led-strip-driver hardware incompatibility issue.
+	- INVESTIGATION UNDERWAY while the brute force trial runs in background.
+
+
+led-strip-driver hardware incompatibility issue:
+
+> ws2811_init failed with code -3 (Hardware revision is not supported)
+
+Will check source to see what the test is.
+
+Found it. Guess what, another "fix it with privileged" issue... I've painstakingly documented why in the issue linked [here](https://stackoverflow.com/a/71602410/3697870).
+
+Well that's the blockers unblocked. What's left to do?
+
+1. RPi case.
+2. Hooking up `winot-gui` to `led-strip-driver`.
+3. Connecting LED strip to protoboard.
+4. Snipping/soldering LED strip.
+5. LED cases.
+6. Procure a wine rack.
+7. Assemble!
+
+Update on "Brute force": abandoned after ~24 hours build time. Was still making progress, but that's too long not to be done. Always bogs down on tasks like: `CXX obj/third_party/blink/renderer/core/core/core_jumbo_17.o` where the two digits vary. Apparently "jumbo" is an innovation that dramatically speeds up the compilation time of Blink (the Chromium renderer), which was getting out of hand!
+
+Moving on to "Back off". Well that was inconclusive - breezed through the whole thing in <2 hours with no crashes! Ah predicatability, how I miss thee.
+
+Case is done. Very intricate, story to come.
+
+Connecting LED strip to protoboard is done.
+
+Snipping/soldering LED strip is done.
+
+LED cases eliminated.
+
+Wine rack procured.
+
+Assembly done!
+
+New todo list:
+
+1. Hook up `winot-gui` to `led-strip-driver`.
+2. Coil scanner cable.
+3. Hack in a cellar tracker login. Virtual keyboard investigation is sucking up time. Might be best just to plug in a keyboard or print some barcodes and use the scanner!
+4. Prevent "Login timed out after 60 seconds" from taking over display! Workaround is to wait and then reboot GUI.
+5. Re-print case after correcting mount positions, radius and hole depth? A lot of work to re-assemble...
+6. Generate some fake data.
+7. Switch to WiFI.
+8. Peel off screen film.
+9. Create vid.
+

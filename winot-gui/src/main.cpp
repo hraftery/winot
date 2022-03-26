@@ -3,6 +3,7 @@
 #include <QtWebView>
 #include <QQuickWindow>
 
+#include "RackIllumination.h"
 
 int main(int argc, char *argv[])
 {
@@ -15,6 +16,15 @@ int main(int argc, char *argv[])
     QtWebView::initialize();
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
+
+    //Warning: Arial is not licensed for free redistribution.
+    //This is a stopgap measure for development purposes only.
+    QFontDatabase::addApplicationFont(":/fonts/Arial.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/Arial Italic.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/Arial Bold.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/Arial Bold Italic.ttf");
+
+    qmlRegisterType<RackIllumination>("Winot.Gui", 1, 0, "RackIllumination");
 
     const QUrl url(u"qrc:/qml/main.qml"_qs);
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,

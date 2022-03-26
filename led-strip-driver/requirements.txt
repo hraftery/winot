@@ -1,6 +1,10 @@
 fastapi==0.75.0
 pydantic==1.9.0
 uvicorn==0.17.5
+# websockets is installed with uvicorn[standard] so gets called up a bit.
+# Turns out we have no current need for it.
+#websockets==10.2
+
 ##color==0.1.1 # turns out to be abandonware
 #colour==0.1.5 # could be useful in future
 rpi-ws281x==4.3.2
