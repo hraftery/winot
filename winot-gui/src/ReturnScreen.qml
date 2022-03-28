@@ -67,22 +67,22 @@ Item {
 
             rows: [
                 {
-                    iWine: 1715774,
-                    type: "White",
-                    vintage: "2013",
-                    name: "Felton Road Pinot Noir Block 3"
-                },
-                {
                     iWine: 3006403,
                     type: "White",
                     vintage: "2012",
                     name: "Undurraga Riesling Terroir Hunter (TH)"
                 },
                 {
-                    iWine: 4071420,
+                    iWine: 4237246,
+                    type: "White",
+                    vintage: "2021",
+                    name: "Wiley Rooster Chardonnay"
+                },
+                {
+                    iWine: 4038038,
                     type: "Red",
-                    vintage: "2020",
-                    name: "Aldi Durif The Venturer Series"
+                    vintage: "2019",
+                    name: "Barramundi Shiraz Petit Verdot"
                 }
             ]
         }

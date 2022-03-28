@@ -65,40 +65,34 @@ Item {
 
             rows: [
                 {
-                    iWine: 4057342,
-                    type: "Red",
-                    vintage: "2018",
-                    name: "Angas & Bremer Shiraz"
-                },
-                {
-                    iWine: 4143619,
+                    iWine: 4186588,
                     type: "Red",
                     vintage: "2020",
-                    name: "Grant Burge Shiraz Barossa Ink"
+                    name: "Krondorf Shiraz Barossa"
+                },
+                {
+                    iWine: 4181662,
+                    type: "White",
+                    vintage: "2021",
+                    name: "Feet on the Ground Wild Ferment Chardonnay"
                 },
                 {
                     iWine: 4057339,
                     type: "Red",
                     vintage: "2016",
-                    name: "Montara Cabernet Sauvignon Homeblock Estate Cabernet Merlot"
+                    name: "Homeblock Estate Cabernet Merlot"
                 },
                 {
-                    iWine: 2504264,
+                    iWine: 4262405,
                     type: "White",
-                    vintage: "2012",
-                    name: "Armchair Critic Chardonnay Speaker's Corner"
+                    vintage: "2021",
+                    name: "Peter Drayton Verdelho Jump Up Creek"
                 },
                 {
-                    iWine: 3693904,
+                    iWine: 4038038,
                     type: "Red",
-                    vintage: "2015",
-                    name: "Château Simon"
-                },
-                {
-                    iWine: 3042217,
-                    type: "Red",
-                    vintage: "2017",
-                    name: "Allandale Tail Wags Dog"
+                    vintage: "2019",
+                    name: "Barramundi Shiraz Petit Verdot"
                 }
             ]
         }

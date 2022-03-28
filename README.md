@@ -1692,3 +1692,20 @@ Fixes on #5 worked! The screw tunnel is brilliant. Screw dropped in one end, and
 Now to #3 - thinking I might do it with keyboard first while I have the until disassembled and USB ports handy, but then just monitor what I'm doing and print barcodes to repeat it later when unit is assembled.
 
 Family is not allowing computer time this arvo, so will do #2 in the meantime.
+
+Task #2 was quite successful. On to #3. Done. Barcode method was easiest! Now GUI crashes occassionally with "Could not queue DRM page flip on screen DSI1 (Invalid argument)". Seems to be correlated with me trying to run the container with the `--privileged` flag to try to pick up the keyboard (which didn't work anyway, just have to make sure scanner and keyboard were plugged in before running the container). Hope that goes away.
+
+Skip #4. #5 done. On to #6. Will get some real bottles to use as fake data.
+
+By the way, the rsync method of rapid development needs some extra leaps because of course Docker makes everything harder. Now need to sync *from* the container to ensure the code ends up in the right spot, which means we lose the ability to filter based on gitignore. Oh well, nothing about this is idea. This will do: `rsync -av --exclude='build*' liteyear@192.168.0.110:~/EmpiricalEE/Balena/repos/winot/winot-gui/src/ ./`.
+
+Hmm, those DRM page flip crashes I was talking about happen whenever I show the webview, possible only when I input data with the scanner. Magically, setting `QT_QPA_EGLFS_ALWAYS_SET_MODE=1 QT_QPA_EGLFS_KMS_ATOMIC=1` seems to [fix things](https://stackoverflow.com/questions/64731435/problem-when-deploying-qt-app-on-raspberry-pi-4-could-not-queue-drm-page-flip-o). I don't know what makes this work, but just `QT_QPA_EGLFS_ALWAYS_SET_MODE` is not enough. Screen still goes blank (no idea why) but wakes up with a tap.
+
+Demo Script:
+
+1. PUT Barramundi Shariz in slot 5.
+2. GET Feet on the ground from slot 2.
+3. DRANK On the Grapevine.
+4. RETURN Wiley Rooster into slot 2.
+
+Phew, #6 done. Now #7.
