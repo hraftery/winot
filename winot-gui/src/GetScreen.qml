@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import Qt.labs.qmlmodels
 import QtWebView
+import Winot.Gui
 
 /*
 Window { //only for Designer
@@ -115,6 +116,8 @@ Item {
                 anchors.fill: parent
                 onClicked: {
                     currentSelection = row
+                    rackIllumination.allOff()
+                    rackIllumination.setSlotToColour(row+1, RackIllumination.Colour.Red)
                     webView.url = "https://www.cellartracker.com/wine.asp?iWine="+tableView.model.getRow(row).iWine
                 }
             }
@@ -125,7 +128,7 @@ Item {
         id: webView
         x: 5
         y: tableView.y + tableView.contentHeight + 5
-        width: onTarget ? 795 - y : 470 //not sure why this is necessary, but it is.
+        width: onTarget ? 795 - y : 470 //not sure why the onTarget check is necessary, but it is.
         height: onTarget ? 470 : 795 - y
 
         visible: currentSelection >= 0

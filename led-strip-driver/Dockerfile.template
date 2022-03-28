@@ -15,8 +15,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src src
 
-# Enable udevd so that plugged dynamic hardware devices show up in our container.
-# Requires "privileged: true" for this service in docker-compose.yml
-#ENV UDEV=1
-
 CMD ["uvicorn","--host","0.0.0.0","--port","80","--app-dir","src","main:app"]
+#CMD sleep infinity

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import Qt.labs.qmlmodels
 import QtWebView
+import Winot.Gui
 
 /*
 Window { //only for Designer
@@ -18,7 +19,7 @@ Item {
 
     function reset() {
         currentSelection = -1
-        //TODO: illuminate next available (or last used?) bin
+        rackIllumination.setSlotToColour(2, RackIllumination.Colour.Purple)
     }
 
     HomeButton {

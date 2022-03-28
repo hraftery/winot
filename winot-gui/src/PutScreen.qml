@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import QtQuick.Controls
 import QtWebView
+import Winot.Gui
 
 /*
 Window { //only for Designer
@@ -19,6 +20,9 @@ Item {
         txtIdentifier.text = ""
         txtIdentifier.focus = true
         webView.visible = false
+
+        //TODO: link this with updating of lblBin
+        rackIllumination.setSlotToColour(5, RackIllumination.Colour.Green)
     }
 
     function getInstructionsText() {

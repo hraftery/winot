@@ -129,20 +129,6 @@ async def put_pixel(*, pixel_id: int = pixel_id_path_param,
                         "Pixel ({}) does not exist".format(pixel_id))
 
 
-@app.put("/pixels/{pixel_id}/off", tags=["pixels"],
-                               responses={ 200: put_pixel_resp })
-async def put_pixel(*, pixel_id: int = pixel_id_path_param,
-                       body: str = None, # have to put something here to allow empty body
-                       tasks: BackgroundTasks):
-  if pixels.is_valid_index(pixel_id):
-    pixels.pixels[pixel_id] = pixels.COLOUR_BLACK
-    tasks.add_task(update_strip)
-    return {pixel_id: pixels.pixels[pixel_id]}
-  else:
-    raise HTTPException(status.HTTP_404_NOT_FOUND,
-                        "Pixel ({}) does not exist".format(pixel_id))
-
-
 @app.get("/pixels", tags=["pixels"],
                     responses= { 200: get_pixels_resp })
 async def get_pixels(offset: int = offset_query_param,
@@ -183,10 +169,9 @@ async def put_pixels(*, offset: int = offset_query_param,
   return pixels.pixels
 
 
-@app.put("/pixels/off", tags=["pixels"],
-                        responses={ 200: put_pixel_resp })
-async def put_pixels(*, body: list[int] = None, # have to put something here to allow empty body
-                        tasks: BackgroundTasks):
+@app.put("/off", tags=["commands"],
+                 responses={ 200: put_pixels_resp })
+async def off(tasks: BackgroundTasks):
   pixels.all_off()
   
   tasks.add_task(update_strip)

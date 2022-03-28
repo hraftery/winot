@@ -1674,3 +1674,21 @@ New todo list:
 8. Peel off screen film.
 9. Create vid.
 
+Working on #1.
+
+Aaaaargh! How hard can it be? Looked like a walk in the park - QML supports `XMLHttpRequest`, so simply fire a few `PUT`'s in response to user action. But bloody 'ell. Turns out `XMLHttpRequest`, when asked to make the most basic of HTTP call (no HTTPS, no DNS, no body, no JSON, no frills), actually sends a unnecessarily complicated HTTP/2 upgrade request, which `uvicorn` borks at and it all falls down. Went down a rabbit hole of making `uvicorn` more robust only to discover it was a wild goose chase. Changing `XMLHttpRequest`'s behaviour was similarly frustrating, with lots of half baked ideas all over the web, none of which make a lick of difference.
+
+Ended up abandoning `XMLHttpRequest` and calling out to a C++ class instead, using `QNetworkRequest`. Pulling on that thread let me to untie `QNetworkAccessManager`, `QJsonDocument`, `QJsonValue`, and `QJsonArray`, none of which made the job of constructing a 7 element array of identical integers any easier, but could at least send a sane HTTP message over the LAN. Then I just needed to discover that `fastapi` chokes on empty bodies, and you have to explicitly specify that an empty body is okay, and all the Internet guidance on doing so is misleading, but with "modern programming practices" (copy and paste and hope and repeat until successful), I fixed it.
+
+Easy. `winot-gui` and `led-strip-driver` are hooked up.
+
+Todo #2, #3, #4 I'll park for now, and just work on #5 tonight because then I can leave the printer running overnight.
+
+Fixes on #5 worked! The screw tunnel is brilliant. Screw dropped in one end, and with a bit of a push from the driver, pops out neatly on the other end! Improvements for next time:
+
+- Stupid [Internet](https://forums.raspberrypi.com/viewtopic.php?t=192936) was wrong again on the corner radius. Changing from 6mm to 6.5mm was not enough. Maybe 7 to 8mm would be better.
+- Despite increasing the screw shelf height from 2mm to 2.8mm to compensate for removal of the washer the screw now pokes out a touch too far. Go to 3.8 or 4mm.
+
+Now to #3 - thinking I might do it with keyboard first while I have the until disassembled and USB ports handy, but then just monitor what I'm doing and print barcodes to repeat it later when unit is assembled.
+
+Family is not allowing computer time this arvo, so will do #2 in the meantime.

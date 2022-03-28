@@ -32,7 +32,8 @@ void RackIllumination::setSlotToColour(int slot, RackIllumination::Colour colour
         default: qDebug("Unsupported slot."); return;
     }
 
-    QString urlStr = "http://192.168.0.120/pixels?offset=%1";
+    //The led_strip_driver service is expected to be running on the same device.
+    QString urlStr = "http://led-strip-driver/pixels?offset=%1";
     QNetworkRequest req(QUrl(urlStr.arg(offset1)));
     req.setAttribute(QNetworkRequest::Http2AllowedAttribute, false); //uvicorn doesn't support it. Needlessly complex anyway.
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -52,7 +53,7 @@ void RackIllumination::setSlotToColour(int slot, RackIllumination::Colour colour
 
 void RackIllumination::allOff(void)
 {
-    QString urlStr = "http://192.168.0.120/pixels/off";
+    QString urlStr = "http://led-strip-driver/off";
     QNetworkRequest req((QUrl(urlStr)));
     req.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
     req.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain"); //uvicorn complains with application/json
