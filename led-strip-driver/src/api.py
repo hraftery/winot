@@ -18,7 +18,7 @@ app = FastAPI()
 # threads. So, since the api is now the chief, we take advantage of its
 # ability to spawn separate threads. This is the thread function, which
 # calls a function pointer in pixels, maintaining our loose coupling to
-# the driver. We do lose the ability of the driver thread to run it's own
+# the driver. We do lose the ability of the driver thread to run its own
 # show though. That functionality was only used to trigger a to-be-sure
 # periodic update of the strip. If that turns out to be necessary, we can
 # use `fastapi_utils.tasks.repeat_every`.
@@ -175,6 +175,11 @@ async def off(tasks: BackgroundTasks):
   pixels.all_off()
   
   tasks.add_task(update_strip)
+  return pixels.pixels
+
+@app.put("/party", tags=["commands"])
+async def party(tasks: BackgroundTasks):
+  tasks.add_task(pixels.run_party)
   return pixels.pixels
 
 
