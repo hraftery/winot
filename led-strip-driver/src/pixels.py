@@ -45,19 +45,17 @@ all_off() #all off (black) by default
 
 # Just a sneaky little demo
 def run_party():
+  global pixels
+  global strip_update_func
+
   if not strip_update_func:
     print("Tried to party, but no strip_update_func.")
     return
   
   party_loop(1.0)
-  party_loop(1.0)
   print("faster")
   party_loop(0.5)
-  party_loop(0.5)
-  party_loop(0.5)
   print("faster")
-  party_loop(0.2)
-  party_loop(0.2)
   party_loop(0.2)
   party_loop(0.2)
   print("faster")
@@ -65,53 +63,76 @@ def run_party():
   party_loop(0.1)
   party_loop(0.1)
   party_loop(0.1)
-  party_loop(0.1)
-  party_loop(0.1)
-  party_loop(0.1)
-  party_loop(0.1)
+  party_loop(0.05)
+  party_loop(0.05)
+  party_loop(0.05)
+  party_loop(0.05)
+  party_loop(0.05)
+  party_loop(0.05)
   print("black")
   pixels = MAX_NUM_PIXELS * [COLOUR_BLACK]
   strip_update_func()
-  sleep(3)
+  sleep(1)
   print("all on")
-  for i in range(20):
+  pixels = MAX_NUM_PIXELS * [COLOUR_RED]
+  strip_update_func()
+  sleep(0.1)
+  pixels = MAX_NUM_PIXELS * [COLOUR_BLACK]
+  strip_update_func()
+  sleep(0.5)
+  pixels = MAX_NUM_PIXELS * [COLOUR_BLUE]
+  strip_update_func()
+  sleep(0.1)
+  pixels = MAX_NUM_PIXELS * [COLOUR_BLACK]
+  strip_update_func()
+  sleep(0.5)
+  pixels = MAX_NUM_PIXELS * [COLOUR_GREEN]
+  strip_update_func()
+  sleep(0.1)
+  pixels = MAX_NUM_PIXELS * [COLOUR_BLACK]
+  strip_update_func()
+  sleep(0.5)
+  for i in range(10):
     pixels = MAX_NUM_PIXELS * [COLOUR_RED]
     strip_update_func()
-    sleep(0.5 - i/50)
+    sleep(0.5 - i/25)
     pixels = MAX_NUM_PIXELS * [COLOUR_BLUE]
     strip_update_func()
-    sleep(0.5 - i/50)
+    sleep(0.5 - i/25)
     pixels = MAX_NUM_PIXELS * [COLOUR_GREEN]
     strip_update_func()
-    sleep(0.5 - i/50)
+    sleep(0.5 - i/25)
+  pixels = MAX_NUM_PIXELS * [COLOUR_BLACK]
+  strip_update_func()
+  sleep(2.5)
   print("fade")
   pixels = MAX_NUM_PIXELS * [COLOUR_WHITE]
   strip_update_func()
   sleep(2)
   pixels = MAX_NUM_PIXELS * [0xEEEEEE]
   strip_update_func()
-  sleep(0.25)
+  sleep(0.2)
   pixels = MAX_NUM_PIXELS * [0xDDDDDD]
   strip_update_func()
-  sleep(0.25)
+  sleep(0.2)
   pixels = MAX_NUM_PIXELS * [0xCCCCCC]
   strip_update_func()
-  sleep(0.25)
+  sleep(0.2)
   pixels = MAX_NUM_PIXELS * [0xBBBBBB]
   strip_update_func()
-  sleep(0.25)
+  sleep(0.2)
   pixels = MAX_NUM_PIXELS * [0xAAAAAA]
   strip_update_func()
-  sleep(0.25)
+  sleep(0.2)
   pixels = MAX_NUM_PIXELS * [0x999999]
   strip_update_func()
-  sleep(0.25)
+  sleep(0.2)
   pixels = MAX_NUM_PIXELS * [0x888888]
   strip_update_func()
-  sleep(0.25)
+  sleep(0.2)
   pixels = MAX_NUM_PIXELS * [0x777777]
   strip_update_func()
-  sleep(0.25)
+  sleep(0.2)
   pixels = MAX_NUM_PIXELS * [0x666666]
   strip_update_func()
   sleep(0.25)
@@ -134,6 +155,9 @@ def run_party():
   strip_update_func()
 
 def party_loop(delay):
+  global pixels
+  global strip_update_func
+
   pixels[30:30+8] = 8 * [COLOUR_BLACK]
   pixels[45:45+7] = 7 * [COLOUR_BLACK]
   pixels[ 0: 0+8] = 8 * [COLOUR_RED]
