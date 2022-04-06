@@ -32,7 +32,13 @@ Here's to the discovery process.
     -   [System Block Diagram](#system-block-diagram)
     -   [BOM](#bom)
     -   [Software Architecture](#software-architecture)
--   [Project Build](build_log.md)
+-   Project Build
+	-   [Build Log](build_log.md)
+	-   [led-strip-driver Build](led-strip-driver_build.md)
+	-   [winot-gui Build](winot-gui_build.md)
+	-   [Enclosure Build](enclosure_build.md)
+	-   [Rack Build](rack_build.md)
+-   [Avenues for Investigation](avenues_for_investigation.md)
 
 ---
 

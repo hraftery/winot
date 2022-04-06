@@ -609,9 +609,9 @@ cmake --build . --parallel
 cmake --install .
 ```
 
-Build complete! Now to test.
+Build complete! Now to test and take stock.
 
-Useful [clarification](https://forums.raspberrypi.com/viewtopic.php?t=260994) on the devilishly complex naming in `vc4-fkms-v3d`/`vc4-kms-v3d`
+By the way, I found this [useful clarification](https://forums.raspberrypi.com/viewtopic.php?t=260994) on the devilishly complex naming of `vc4-fkms-v3d` and `vc4-kms-v3d`.
 
 ### Status Stocktake
 
@@ -637,7 +637,7 @@ Useful [clarification](https://forums.raspberrypi.com/viewtopic.php?t=260994) on
 	- `docker cp` to extract build, then runs on target
 	- `docker commit` fails "no space left on device". Appears to be 10GB limit, so have no way to create image.
 
-Halelujah, a Qt 6 app, built and running on the RPi 3 running a 64-bit OS. [Where's my t-shirt?](https://twitter.com/HeathRaftery/status/1503934255570690048). But webview and webengine are a much tougher nut to crack.
+Hallelujah, a Qt 6 app, built and running on the RPi 3 running a 64-bit OS. [Where's my t-shirt?](https://twitter.com/HeathRaftery/status/1503934255570690048). But webview and webengine are a much tougher nut to crack.
 
 So cross-compilation is getting there, but painfully. With a big clean up of the cross-compilation environment, taking in the lessons from the last big ditch effort, there's every chance of success. But the clock's ticking and after reviewing the strongest horses in that stocktake and where the current project needs to get to, it's time to back the Docker build to try to bring it home.
 
@@ -665,7 +665,6 @@ Other [Qt 6.2 Configure Options](https://doc.qt.io/qt-6/configure-linux-device.h
 - `-optimize-size` - seems to be optimizing release builds in terms of resulting binaries size (by sacrificing build time)
 - `-static` - see [At last, let's build Qt statically](https://decovar.dev/blog/2018/02/17/build-qt-statically/).
 	- Update: requires newer version of CMake. Temporarily in the too hard basket.
-- 
 
 
 
@@ -786,7 +785,7 @@ Went deeeep on balenaOS. Eventually found:
 - balenaOS 2.80.3+rev1 : happy days
 - balenaOS 2.94.4 : false sense of security
 
-And added kernel version table to [Sheets](https://docs.google.com/spreadsheets/d/1Vril53xEtRFOpUpF5h6KM9TFz6D7Ar1aQKYEL28-_Lo/edit?usp=sharing).
+And created a broad kernel version table in [Sheets](https://docs.google.com/spreadsheets/d/1Vril53xEtRFOpUpF5h6KM9TFz6D7Ar1aQKYEL28-_Lo/edit?usp=sharing).
 
 So 2.80.3+rev1 seems to be going good. Right up until I rotate the display +90 instead of -90! Suddenly no touch! Couldn't possibly be software - why would the direction matter?
 
@@ -796,7 +795,7 @@ Hmm, `evtest` (installed in `winot_gui` container) even reports correct coordina
 
 Similar issues [here](https://forum.qt.io/topic/78340/screen-rotation-does-not-handle-mouse-clicks-properly/3). No solution.
 
-Okay `rev9` is a clean build. `rev10` is `CMD /bin/bash`.
+Okay `rev9` is a clean build. `rev10` is same but `CMD /bin/bash` in the Dockerfiles.
 
 OMG. The "false sense of security” turns out to simply be a bad balena builder build.
 
@@ -965,5 +964,7 @@ Time to bite the bullet and do #8. Film off!
 And just a quick little #9 to finish off, right? Right? Oh my... 20 hours later, I've earned a deep appreciation for people that can make videos. </struggle-town>
 
 At least I managed to find 1000 ways you can’t [record the screen of a eglfs app on Raspberry Pi](https://unix.stackexchange.com/questions/697188/how-to-record-screen-when-using-eglfs-on-broadcom-videocore-iv).
+
+[Feast your eyes](https://youtu.be/xWex7T_WKIk) on 5 minutes of cringe, while you get to know Winot.
 
 Finit.
