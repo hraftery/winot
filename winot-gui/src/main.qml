@@ -4,7 +4,7 @@ import Winot.Gui
 
 
 Window {
-    property bool onTarget: true //set to true if we're running on the Pi, false for desktop.
+    property bool onTarget: false//true //set to true if we're running on the Pi, false for desktop.
 
     RackIllumination {
         id: rackIllumination
