@@ -182,9 +182,13 @@ I hate that the first step is always "name your new project". Naming is hard - p
 
 So am still a bit undecided. Nearly went with `app` to match the Software Architecture diagram, but that term has meaning in the balenaverse. So let's go with... `winot-gui`. Well scoped, nicely descriptive and hints that there should be some separation of concerns, even if nearly all functionality will be in the user interface service to begin with.
 
+![winot_gui-home_screen_screenshot](img/build_log-2-winot_gui-home_screen_screenshot.png)
+
 Phew, done. Man, that app was *hard*. Everytime I go to do UI I feel like I'm reinventing the wheel, designing buttons and setting spacing and establishing UX. Is this frustration a product of growing up with the Apple HIG, with graphical UI toolboxes like Interface Builder and ResEdit? Twas a much simpler and prettier world back then...
 
 Anyway, after a big slog, a complete V1 of the UI is done. Was brutal getting screens, tables, webviews and other pedestrian crap going. But would have only been worse as a web app, I think. So now ready to draw a line in the sand, and work on integration - getting `winot-gui` off the desktop, and building, deploying and running on balenaOS. Then we get to hook up the UI to the LED driver!
+
+![put_screen_screen_recording](img/build_log-3-put_screen_screen_recording.mov)
 
 ### Porting to the target
 
@@ -260,7 +264,11 @@ cmake --build . --parallel
 cmake --install .
 ```
 
-Easy. But useless on its own. Now will it cross compile? Using variations on [this guide](https://wiki.qt.io/Raspberry_Pi_Beginners_Guide) for Qt 5.
+Kept 16 cores humming for a while!
+
+![keeping_a_server_busy](img/build_log-6-keeping_a_server_busy.png)
+
+Success. Easy. But useless on its own. Now will it cross compile? Using variations on [this guide](https://wiki.qt.io/Raspberry_Pi_Beginners_Guide) for Qt 5.
 
 ```
 cd
@@ -294,58 +302,7 @@ vi ../qtbase-everywhere-src-6.2.3-cross/toolchain.cmake # contents below
 ../qtbase-cross/configure -nomake examples -nomake tests -qt-host-path ../qtbase-host -prefix /usr/local/qt6 -- -DCMAKE_TOOLCHAIN_FILE=../qtbase-cross/toolchain.cmake -DQT_BUILD_TOOLS_WHEN_CROSSCOMPILING=ON
 ```
 
-Contents of `toolchain.cmake`:
-
-```
-cmake_minimum_required(VERSION 3.16)
-include_guard(GLOBAL)
-
-set(CMAKE_SYSTEM_NAME Linux)
-set(CMAKE_SYSTEM_PROCESSOR arm)
-
-set(TARGET_SYSROOT /mnt/rasp-pi-rootfs)
-set(CROSS_COMPILER /usr/bin)
-
-set(CMAKE_SYSROOT ${TARGET_SYSROOT})
-
-set(ENV{PKG_CONFIG_PATH} "")
-set(ENV{PKG_CONFIG_LIBDIR} ${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig)
-set(ENV{PKG_CONFIG_SYSROOT_DIR} ${CMAKE_SYSROOT})
-
-set(CMAKE_C_COMPILER ${CROSS_COMPILER}/aarch64-linux-gnu-gcc)
-set(CMAKE_CXX_COMPILER ${CROSS_COMPILER}/aarch64-linux-gnu-g++)
-
-set(QT_COMPILER_FLAGS "-march=armv8-a+crc -mtune=cortex-a53 -ftree-vectorize")
-set(QT_COMPILER_FLAGS_RELEASE "-O2 -pipe")
-set(QT_LINKER_FLAGS "-Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed")
-
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
-
-include(CMakeInitializeConfigs)
-
-function(cmake_initialize_per_config_variable _PREFIX _DOCSTRING)
-  if (_PREFIX MATCHES "CMAKE_(C|CXX|ASM)_FLAGS")
-    set(CMAKE_${CMAKE_MATCH_1}_FLAGS_INIT "${QT_COMPILER_FLAGS}")
-
-    foreach (config DEBUG RELEASE MINSIZEREL RELWITHDEBINFO)
-      if (DEFINED QT_COMPILER_FLAGS_${config})
-        set(CMAKE_${CMAKE_MATCH_1}_FLAGS_${config}_INIT "${QT_COMPILER_FLAGS_${config}}")
-      endif()
-    endforeach()
-  endif()
-
-  if (_PREFIX MATCHES "CMAKE_(SHARED|MODULE|EXE)_LINKER_FLAGS")
-    foreach (config SHARED MODULE EXE)
-      set(CMAKE_${config}_LINKER_FLAGS_INIT "${QT_LINKER_FLAGS}")
-    endforeach()
-  endif()
-
-  _cmake_initialize_per_config_variable(${ARGV})
-endfunction()
-```
+Contents of [toolchain.cmake](toolchain.cmake).
 
 Failed on OpenGL. Want to use OpenGL Desktop but haven't found the flag. Tried `-opengl es2` which failed with same error. Hmm, seems it's because the `sysroot` has none of the required libaries. How best to install libaries into `sysroot`? [Seems](https://stackoverflow.com/questions/39731894/cross-compile-with-dependencies-how-to-get-target-dependencies-on-host) [to](https://stackoverflow.com/questions/41568496/trying-to-cross-compile-qtwebengine-for-arm7) [be](https://stackoverflow.com/questions/69024955/how-to-deal-with-dependencies-when-cross-compiling) [a](https://stackoverflow.com/questions/67552467/is-there-a-way-to-cross-compile-a-library-without-having-to-manually-compile-eve) [FAQ](https://stackoverflow.com/questions/11796127/how-to-cross-compile-c-library-with-dependencies) [with](https://stackoverflow.com/questions/34040363/how-to-add-library-to-cross-compile-toolchain) [few](https://stackoverflow.com/questions/54870687/build-library-in-target-for-cross-compile-in-host) [solutions](https://stackoverflow.com/questions/18900855/how-to-work-with-external-libraries-when-cross-compiling). One question I came across (and can't find now) even desperately asked "there must be an easy way to do this", and the single answer was effectively "yes, of course" and then trailled off into gate-keeping obscurity, a characteristic you often see in technical circles when pride exceeds knowledge. In my mind, the feasible methods are:
 
@@ -446,168 +403,7 @@ Oh no, now all the `.so` library symlinks have incorrect paths. Fixed 3 of them 
 
 #### Complete cross-compilation attempt
 
-```
-ssh root@128.199.97.210
-apt update
-apt upgrade
-apt install build-essential cmake ninja-build libfontconfig1-dev libdbus-1-dev libfreetype6-dev libicu-dev libinput-dev libxkbcommon-dev libssl-dev libpng-dev libjpeg-dev libglib2.0-dev
-apt install libgles2-mesa-dev libgbm-dev libdrm-dev
-apt install libx11-dev libxcb1-dev libxext-dev libxi-dev libxcomposite-dev libxcursor-dev libxtst-dev libxrandr-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-util0-dev libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libxcb-xinput-dev
-apt install unzip gcc make gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
-apt install qemu qemu-system-aarch64
-wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtbase-everywhere-src-6.2.3.tar.xz
-wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtshadertools-everywhere-src-6.2.3.tar.xz
-wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qttools-everywhere-src-6.2.3.tar.xz
-wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtdeclarative-everywhere-src-6.2.3.tar.xz
-wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtsvg-everywhere-src-6.2.3.tar.xz
-wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtvirtualkeyboard-everywhere-src-6.2.3.tar.xz
-wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtwebengine-everywhere-src-6.2.3.tar.xz
-wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtwebsockets-everywhere-src-6.2.3.tar.xz
-wget https://download.qt.io/official_releases/qt/6.2/6.2.3/submodules/qtwebview-everywhere-src-6.2.3.tar.xz
-wget https://downloads.raspberrypi.org/raspios_arm64/images/raspios_arm64-2022-01-28/2022-01-28-raspios-bullseye-arm64.zip
-
-
-unzip 2022-01-28-raspios-bullseye-arm64.zip
-mkdir /mnt/rasp-pi-rootfs
-fdisk -l 2022-01-28-raspios-bullseye-arm64.img # note "Start" of Linux partition. Let offset = Start * sector size.
-mount -o loop,offset=272629760 2022-01-28-raspios-bullseye-arm64.img /mnt/rasp-pi-rootfs
-mount -o offset=4194304,sizelimit=268435456 -t vfat 2022-01-28-raspios-bullseye-arm64.img /mnt/rasp-pi-rootfs/boot
-cp /mnt/rasp-pi-rootfs/boot/kernel8.img ./
-cp /mnt/rasp-pi-rootfs/boot/bcm2710-rpi-3-b-plus.dtb ./
-umount /mnt/rasp-pi-rootfs/boot
-umount /mnt/rasp-pi-rootfs
-qemu-img resize -f raw 2022-01-28-raspios-bullseye-arm64.img 4G
-qemu-system-aarch64 -m 1024 -M raspi3b -kernel kernel8.img -dtb bcm2710-rpi-3-b-plus.dtb -drive file=2022-01-28-raspios-bullseye-arm64.img,if=sd,format=raw -append "console=ttyAMA0 root=/dev/mmcblk0p2 rw rootwait rootfstype=ext4" -nographic -device usb-net,netdev=net0 -netdev user,id=net0,hostfwd=tcp::5555-:22
-
-#
-# in qemu
-#
-sudo apt update
-sudo apt remove chromium-browser
-sudo apt autoremove
-# sudo apt upgrade # took ages! And kills network on reboot... Fixed: copy the modified kernel file out of /boot again.
-sudo apt install build-essential cmake ninja-build libfontconfig1-dev libdbus-1-dev libfreetype6-dev libicu-dev libinput-dev libxkbcommon-dev libssl-dev libpng-dev libjpeg-dev libglib2.0-dev zlib1g-dev
-sudo apt install libgles2-mesa-dev libgbm-dev libdrm-dev
-sudo apt install libx11-dev libxcb1-dev libxext-dev libxi-dev libxcomposite-dev libxcursor-dev libxtst-dev libxrandr-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-util0-dev libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libxcb-xinput-dev
-sudo raspi-config # Advanced -> graphics driver -> change to GL (Full KMS). See https://forums.raspberrypi.com/viewtopic.php?t=317511
-# sudo apt install mesa-utils # maybe good, maybe bad
-exit
-
-
-# Oh dear, qtwebview requires qtwebengine, which requires cmake 3.19 but impish only has 3.18.4.
-apt purge cmake
-wget https://github.com/Kitware/CMake/releases/download/v3.22.3/cmake-3.22.3.tar.gz
-tar xf cmake-3.22.3.tar.gz
-cd cmake
-./bootstrap # takes ages
-gmake -j$(nproc)
-gmake install
-cd ..
-
-tar xf qtbase-everywhere-src-6.2.3.tar.xz
-tar xf qtshadertools-everywhere-src-6.2.3.tar.xz
-tar xf qttools-everywhere-src-6.2.3.tar.xz 
-tar xf qtdeclarative-everywhere-src-6.2.3.tar.xz 
-tar xf qtwebengine-everywhere-src-6.2.3.tar.xz 
-tar xf qtwebsockets-everywhere-src-6.2.3.tar.xz 
-tar xf qtwebview-everywhere-src-6.2.3.tar.xz 
-tar xf qtsvg-everywhere-src-6.2.3.tar.xz
-tar xf qtvirtualkeyboard-everywhere-src-6.2.3.tar.xz 
-
-# now the order really matters...
-# on the other hand, --parallel seems not to matter
-cd qtbase-everywhere-src-6.2.3
-./configure
-cmake --build . --parallel
-cmake --install .
-cd ../qtshadertools-everywhere-src-6.2.3
-/usr/local/Qt-6.2.3/bin/qt-configure-module .
-cmake --build . --parallel
-cmake --install .
-cd ../qtdeclarative-everywhere-src-6.2.3
-/usr/local/Qt-6.2.3/bin/qt-configure-module .
-cmake --build . --parallel
-cmake --install .
-cd ../qtwebsockets-everywhere-src-6.2.3
-/usr/local/Qt-6.2.3/bin/qt-configure-module .
-cmake --build . --parallel
-cmake --install .
-cd ../qtwebengine-everywhere-src-6.2.3
-apt install nodejs python gperf bison flex libnss3-dev libxshmfence-dev
-apt install libxkbfile-dev # not checked by configure!
-apt install libfontconfig1-dev libfreetype6-dev libx11-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync0-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-xinerama0-dev libxkbcommon-dev libxkbcommon-x11-dev # still not enough...
-apt install libevent-dev minizip libminizip-dev libre2-dev libwebp-dev liblcms2-dev libxml2-dev libxslt-dev libavcodec-dev libavformat-dev libopus-dev libharfbuzz-dev libsnappy-dev # maybe makes no difference. Deleting and untar-ing again worked instead.
-apt purge libharfbuzz-dev # fails once you get to cross compiling!
-/usr/local/Qt-6.2.3/bin/qt-configure-module .
-cmake --build . --parallel # oh man, so many oom errors. 2GB per 8 processes: oom with 16GB RAM. Because DigitalOcean don't recommend swap on SSDs? Bit trigger-happy. Neither `--parallel 1` nor `-- -j 1` work, like they do on the Pi itself. Only solution so far is to keep re-starting. Maybe "echo 2 > /proc/sys/vm/overcommit_memory"? Bizarrely, "echo 1" is stable, "echo 2" is not... Still fragile though, so follow [this](https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-20-04) to create some swap.
-cmake --install .
-cd ../qtwebview-everywhere-src-6.2.3
-/usr/local/Qt-6.2.3/bin/qt-configure-module .
-cmake --build . --parallel
-cmake --install .
-cd ../qtsvg-everywhere-src-6.2.3
-/usr/local/Qt-6.2.3/bin/qt-configure-module .
-cmake --build . --parallel
-cmake --install .
-cd ../qtvirtualkeyboard-everywhere-src-6.2.3
-/usr/local/Qt-6.2.3/bin/qt-configure-module .
-cmake --build . --parallel
-cmake --install .
-cd ../qttools-everywhere-src-6.2.3
-/usr/local/Qt-6.2.3/bin/qt-configure-module .
-cmake --build . --parallel
-cmake --install .
-
-
-mv qtbase-everywhere-src-6.2.3 qtbase-everywhere-src-6.2.3-host
-tar xf qtbase-everywhere-src-6.2.3.tar.xz
-mv qtbase-everywhere-src-6.2.3 qtbase-cross
-mkdir qtbasebuild
-vi qtbase-cross/toolchain.cmake # as above
-mount -o loop,offset=272629760 2022-01-28-raspios-bullseye-arm64.img /mnt/rasp-pi-rootfs
-wget https://raw.githubusercontent.com/riscv/riscv-poky/master/scripts/sysroot-relativelinks.py # apparently the original, fixQualifiedLibraryPaths, is broken
-chmod +x sysroot-relativelinks.py 
-./sysroot-relativelinks.py /mnt/rasp-pi-rootfs
-cd qtbasebuild/
-../qtbase-cross/configure -nomake examples -nomake tests -qt-host-path /usr/local/Qt-6.2.3 -prefix /usr/local/qt6 -- -DCMAKE_TOOLCHAIN_FILE=../qtbase-cross/toolchain.cmake -DQT_BUILD_TOOLS_WHEN_CROSSCOMPILING=ON -DCMAKE_CXX_FLAGS="-Wl,--allow-shlib-undefined" # the last option prevents "/usr/lib/gcc-cross/aarch64-linux-gnu/11/../../../../aarch64-linux-gnu/bin/ld: /mnt/rasp-pi-rootfs/lib/aarch64-linux-gnu/libpthread.so.0: undefined reference to `__libc_dlopen_mode@GLIBC_PRIVATE'" compile errors
-cmake --build . --parallel
-cmake --install .
-
-# wow. it worked. Now the other submodules
-
-cd ..
-mv qtshadertools-everywhere-src-6.2.3 qtshadertools-everywhere-src-6.2.3-host
-tar xf qtshadertools-everywhere-src-6.2.3.tar.xz 
-mv qtshadertools-everywhere-src-6.2.3 qtshadertools-cross
-cd qtshadertools-cross/
-/mnt/rasp-pi-rootfs/usr/local/qt6/bin/qt-configure-module . -- -DCMAKE_CXX_FLAGS="-Wl,--allow-shlib-undefined"
-cmake --build . --parallel
-cmake --install .
-cd ..
-mv qtdeclarative-everywhere-src-6.2.3 qtdeclarative-everywhere-src-6.2.3-host
-tar xf qtdeclarative-everywhere-src-6.2.3.tar.xz 
-mv qtdeclarative-everywhere-src-6.2.3 qtdeclarative-cross
-cd qtdeclarative-cross/
-/mnt/rasp-pi-rootfs/usr/local/qt6/bin/qt-configure-module . -- -DCMAKE_CXX_FLAGS="-Wl,--allow-shlib-undefined"
-cmake --build . --parallel
-cmake --install .
-cd ..
-mv qtwebsockets-everywhere-src-6.2.3 qtwebsockets-everywhere-src-6.2.3-host
-tar xf qtwebsockets-everywhere-src-6.2.3.tar.xz 
-mv qtwebsockets-everywhere-src-6.2.3 qtwebsockets-cross
-cd qtwebsockets-cross/
-/mnt/rasp-pi-rootfs/usr/local/qt6/bin/qt-configure-module . -- -DCMAKE_CXX_FLAGS="-Wl,--allow-shlib-undefined"
-cmake --build . --parallel
-cmake --install .
-cd ..
-mv qtwebengine-everywhere-src-6.2.3 qtwebengine-everywhere-src-6.2.3-host
-tar xf qtwebengine-everywhere-src-6.2.3.tar.xz 
-mv qtwebengine-everywhere-src-6.2.3 qtwebengine-cross
-cd qtwebengine-cross/
-/mnt/rasp-pi-rootfs/usr/local/qt6/bin/qt-configure-module . -- -DCMAKE_CXX_FLAGS="-Wl,--allow-shlib-undefined"
-cmake --build . --parallel
-cmake --install .
-```
+See [complete\_cross-compilation\_script.sh](complete_cross-compilation_script.sh).
 
 Build complete! Now to test and take stock.
 
@@ -637,7 +433,11 @@ By the way, I found this [useful clarification](https://forums.raspberrypi.com/v
 	- `docker cp` to extract build, then runs on target
 	- `docker commit` fails "no space left on device". Appears to be 10GB limit, so have no way to create image.
 
-Hallelujah, a Qt 6 app, built and running on the RPi 3 running a 64-bit OS. [Where's my t-shirt?](https://twitter.com/HeathRaftery/status/1503934255570690048). But webview and webengine are a much tougher nut to crack.
+Hallelujah, a Qt 6 app, built and running on the RPi 3 running a 64-bit OS. [Where's my t-shirt?](https://twitter.com/HeathRaftery/status/1503934255570690048).
+
+[![asciicast](https://asciinema.org/a/485170.svg)](https://asciinema.org/a/485170)
+
+But webview and webengine are a much tougher nut to crack.
 
 So cross-compilation is getting there, but painfully. With a big clean up of the cross-compilation environment, taking in the lessons from the last big ditch effort, there's every chance of success. But the clock's ticking and after reviewing the strongest horses in that stocktake and where the current project needs to get to, it's time to back the Docker build to try to bring it home.
 
@@ -732,6 +532,9 @@ Okay, by sheer determination (aka. trial and error), I have a working solution b
 - `Window` itself doesn't have a `transform` property, so apply a `Binding` to the `Stack` component, which is the only visual element in the `Window`. Use the `Binding` with a `when` of `onTarget` to set `transform` to `Rotation { origin.x: root.height/2; origin.y: root.height/2; angle: -90 }`. Note the funny origin to accommodate the coordinate space transform.
 - Everything automagically works, including touch. Except `Webview`. Oddly, all `Webview`'s have to have their `width` and `height` swapped too.
 
+Handily, Sheets can do matrix math, for easy derivation of origin coordinates for rotation transform.
+
+![matrix_math_in_sheets](img/build_log-7-matrix_math_in_sheets.png)
 
 Set the [barely documented](https://doc.qt.io/qt-6/inputs-linux-device.html) `QT_QPA_EGLFS_HIDECURSOR=1` environment variable to hide the cursor.
 
@@ -761,11 +564,15 @@ Method #1 works fine and encouraged by my balena guide, so will push ahead. Note
 
 Packaged it all up in a Dockerfile, including building and running the project source, sent to to the balena builders. Woke in the morning to a functional device! Voila!
 
+Subsequent builds don't have to run overnight...
+
+![successful_cloud_build](img/build_log-8-successful_cloud_build.png)
+
 Touchscreen looks good (albeit upside down - known issue) although WebView doesn't load...
 
 Looked into WebView issue. Looks like the old "No WebView plug-in found!" issue, which I previously fixed by setting `QT_DEBUG_PLUGINS=1` watching the stdout when the WebView should appear. From memory that revealed a missing library, which was relatively easy to fix. Can't remember the details though, and appears to be the only issue amongst 70 trillion that I fixed, that I didn't document...
 
-Bigger issues though - I set `QT_DEBUG_PLUGINS=1` and re-pushed. It takes 10 minutes just to load the image from cache, but when it ran next... touch no longer worked! What changed? Maybe:
+Bigger issues though - I set `QT_DEBUG_PLUGINS=1` and re-pushed. It takes [10 minutes](https://asciinema.org/a/480700) just to load the image from cache, but when it ran next... touch no longer worked! What changed? Maybe:
 
 - The addition of `QT_DEBUG_PLUGINS=1`.
 - Launch on to an already running blank balenaOS vs pushing a new version.
@@ -897,7 +704,9 @@ Update on "Brute force" avenue: abandoned after ~24 hours build time. Was still 
 
 Moving on to "Back off on failure" avenue. Well that was inconclusive - it breezed through the whole thing in <2 hours with no crashes! Ah predicatability, how I miss thee.
 
-Case is done. Very intricate, story to come.
+Case is done. Very intricate, story [here](enclosure_build.md).
+
+![enclosure](img/build_log-9-enclosure.png)
 
 Connecting LED strip to protoboard is done.
 
@@ -905,9 +714,11 @@ Snipping/soldering LED strip is done.
 
 LED cases eliminated.
 
-Wine rack procured.
+Wine rack procured. Who would have known what difference colour makes?
 
-Assembly done!
+![shopping_for_wine_racks](img/build_log-13-shopping_for_wine_racks.png)
+
+[Assembly](rack_build.md) done!
 
 New todo list:
 
@@ -931,7 +742,11 @@ Easy. `winot-gui` and `led-strip-driver` are hooked up.
 
 Todo's #2, #3, #4 I'll park for now, and just work on #5 tonight because then I can leave the printer running overnight.
 
-Fixes on #5 worked! The screw tunnel is brilliant. Screw dropped in one end, and with a bit of a push from the driver, pops out neatly on the other end! Improvements for next time:
+Fixes on #5 worked! The screw tunnel is brilliant. Screw dropped in one end, and with a bit of a push from the driver, pops out neatly on the other end!
+
+![screw_tunnel](img/build_log-10-screw_tunnel.png)
+
+Improvements for next time:
 
 - Stupid [Internet](https://forums.raspberrypi.com/viewtopic.php?t=192936) was wrong again on the corner radius. Changing from 6mm to 6.5mm was not enough. Maybe 7 to 8mm would be better.
 - Despite increasing the screw shelf height from 2mm to 2.8mm to compensate for removal of the washer the screw now pokes out a touch too far. Go to 3.8 or 4mm.
@@ -940,7 +755,11 @@ Now to #3 - thinking I might do it with keyboard first while I have the until di
 
 Family is not allowing computer time this arvo, so will do #2 in the meantime.
 
-Task #2 was quite successful. On to #3. Done. Barcode method was easiest! Now GUI crashes occassionally with "Could not queue DRM page flip on screen DSI1 (Invalid argument)". Seems to be correlated with me trying to run the container with the `--privileged` flag to try to pick up the keyboard (which didn't work anyway, just have to make sure scanner and keyboard were plugged in before running the container). Hope that goes away.
+Task #2 was quite successful. On to #3. Done. Barcode method was easiest!
+
+![logging-in-with-a-scanner](img/build_log-11-logging-in-with-a-scanner.png)
+
+Now GUI crashes occassionally with "Could not queue DRM page flip on screen DSI1 (Invalid argument)". Seems to be correlated with me trying to run the container with the `--privileged` flag to try to pick up the keyboard (which didn't work anyway, just have to make sure scanner and keyboard were plugged in before running the container). Hope that goes away.
 
 Skip #4. #5 done. On to #6. Will get some real bottles to use as fake data.
 
@@ -964,6 +783,8 @@ Time to bite the bullet and do #8. Film off!
 And just a quick little #9 to finish off, right? Right? Oh my... 20 hours later, I've earned a deep appreciation for people that can make videos. </struggle-town>
 
 At least I managed to find 1000 ways you can’t [record the screen of a eglfs app on Raspberry Pi](https://unix.stackexchange.com/questions/697188/how-to-record-screen-when-using-eglfs-on-broadcom-videocore-iv).
+
+![attempting_to_record_screen](img/build_log-12-attempting_to_record_screen.png)
 
 [Feast your eyes](https://youtu.be/xWex7T_WKIk) on 5 minutes of cringe, while you get to know Winot.
 
